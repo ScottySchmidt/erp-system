@@ -1,4 +1,3 @@
-
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
 
@@ -8,20 +7,19 @@ export const Route = createFileRoute('/api/supabase')({
       GET: async ({ context }) => {
         const env = context.cloudflare.env
 
-        const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
-
-        const { data, error } = await supabase
-          .from('invoices')
-          .select('*')
-          .limit(10)
-
-        if (error) {
-          return new Response(JSON.stringify(error), { status: 500 })
+        if (!env.SUPABASE_URL || !env.SUPABASE_KEY) {
+          return new Response("Supabase env variables missing", { status: 500 })
         }
 
-        return new Response(JSON.stringify(data), {
-          headers: { "Content-Type": "application/json" }
-        })
+        const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY)
+
+        return new Response(
+          JSON.stringify({
+            status: "connected",
+            url: env.SUPABASE_URL
+          }),
+          { headers: { "Content-Type": "application/json" } }
+        )
       }
     }
   }

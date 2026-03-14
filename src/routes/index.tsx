@@ -13,7 +13,7 @@ function App() {
           ERP Accounting System
         </h1>
         <p className="mb-8 max-w-2xl text-base text-[var(--sea-ink-soft)] sm:text-lg">
-           100+ clients and secured
+           100+ clients across United States
         </p>
         <div className="flex flex-wrap gap-3">
           <a

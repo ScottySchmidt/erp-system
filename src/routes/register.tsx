@@ -26,11 +26,6 @@ function RegisterPage() {
     e.preventDefault()
     setMessage('')
 
-    if (!form.name || !form.email || !form.password) {
-      setMessage('Please fill in name, email, and password.')
-      return
-    }
-
     try {
       setLoading(true)
 
@@ -49,11 +44,11 @@ function RegisterPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setMessage(data.error || 'Register failed.')
+        setMessage(data.detail || 'Register failed')
         return
       }
 
-      setMessage('User registered successfully.')
+      setMessage('User registered successfully')
       setForm({
         name: '',
         email: '',
@@ -62,18 +57,16 @@ function RegisterPage() {
         dept_id: '',
       })
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Something went wrong.')
+      setMessage(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <main className="page-wrap px-4 pb-8 pt-14">
-      <section className="island-shell rounded-[2rem] px-6 py-10 sm:px-10 sm:py-14 max-w-xl mx-auto">
-        <h1 className="mb-6 text-3xl font-bold text-[var(--sea-ink)]">
-          Register User
-        </h1>
+    <main className="page-wrap flex min-h-screen items-center justify-center px-4 pb-8 pt-14">
+      <section className="island-shell max-w-xl rounded-[2rem] px-6 py-10 sm:px-10 sm:py-14">
+        <h1 className="mb-6 text-3xl font-bold">Register</h1>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -102,23 +95,34 @@ function RegisterPage() {
             className="w-full rounded-xl border px-4 py-3"
           />
 
-          <input
+          <select
             name="role_id"
-            type="number"
-            placeholder="Role ID"
             value={form.role_id}
             onChange={handleChange}
             className="w-full rounded-xl border px-4 py-3"
-          />
+          >
+            <option value="">Select Role</option>
+            <option value="1">Admin</option>
+            <option value="2">Accounting</option>
+            <option value="3">Manager</option>
+            <option value="4">Employee</option>
+            <option value="5">Read Only</option>
+          </select>
 
-          <input
+          <select
             name="dept_id"
-            type="number"
-            placeholder="Department ID"
             value={form.dept_id}
             onChange={handleChange}
             className="w-full rounded-xl border px-4 py-3"
-          />
+          >
+            <option value="">Select Department</option>
+            <option value="1">Accounting</option>
+            <option value="2">Finance</option>
+            <option value="3">Human Resources</option>
+            <option value="4">Information Technology</option>
+            <option value="5">Procurement</option>
+            <option value="6">Operations</option>
+          </select>
 
           <button
             type="submit"

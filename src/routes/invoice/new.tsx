@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { twc } from "react-twc";
-import z from "zod";
+import * as v from "valibot";
 
 import { supabase } from "#/lib/supabase";
 
@@ -11,16 +11,24 @@ export const Route = createFileRoute("/invoice/new")({
   component: NewInvoice,
 });
 
-const InvoiceShape = z.object({
-  user_id: z.coerce.number<string>().int().min(1),
-  account_id: z.coerce.number<string>().int().min(1),
-  vendor_id: z.coerce.number<string>().int().min(1),
-  invoice_date: z.string(),
-  amount: z.coerce.number<string>().min(0),
+const InvoiceSchema = v.object({
+  user_id: v.pipe(v.number(), v.integer()),
+  account_id: v.pipe(v.number(), v.integer()),
+  vendor_id: v.pipe(v.number(), v.integer()),
+  invoice_date: v.string(),
+  amount: v.pipe(v.number(), v.minValue(0)),
+});
+
+const InvoiceFormSchema = v.object({
+  user_id: v.pipe(v.string(), v.transform(parseInt), InvoiceSchema.entries.user_id),
+  account_id: v.pipe(v.string(), v.transform(parseInt), InvoiceSchema.entries.account_id),
+  vendor_id: v.pipe(v.string(), v.transform(parseInt), InvoiceSchema.entries.vendor_id),
+  invoice_date: v.string(),
+  amount: v.pipe(v.string(), v.transform(parseFloat), InvoiceSchema.entries.amount),
 });
 
 const createInvoice = createServerFn()
-  .inputValidator(InvoiceShape)
+  .inputValidator(InvoiceSchema)
   .handler(async ({ data }) => {
     await supabase.from("invoices").insert([data]).throwOnError();
   });
@@ -36,13 +44,15 @@ function NewInvoice() {
       vendor_id: "",
     },
     validators: {
-      onChange: InvoiceShape,
+      onMount: InvoiceFormSchema,
+      onChange: InvoiceFormSchema,
     },
     onSubmit: async ({ value }) => {
       setError("");
 
       try {
-        await createInvoice({ data: value });
+        const data = v.parse(InvoiceFormSchema, value);
+        await createInvoice({ data });
       } catch (error: any) {
         setError(error.message ?? String(error));
       }

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 
-import { supabase } from "#/lib/supabase";
+import { database, t } from "#/lib/database";
 import { formatDate } from "#/lib/utils";
 
 import { DataSchema, InvoiceForm } from "./_form";
@@ -13,7 +13,12 @@ export const Route = createFileRoute("/invoice/new")({
 const createInvoice = createServerFn()
   .inputValidator(DataSchema)
   .handler(async ({ data }) => {
-    await supabase.from("invoices").insert([data]).throwOnError();
+    const db = database();
+
+    await db.insert(t.invoices).values({
+      ...data,
+      amount: data.amount.toFixed(2),
+    });
   });
 
 function NewInvoice() {

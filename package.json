@@ -15,9 +15,6 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@cloudflare/vite-plugin": "^1.13.8",
-    "@supabase/supabase-js": "^2.99.1",
-    "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "^0.7.0",
     "@tanstack/react-form": "^1.28.5",
     "@tanstack/react-router": "^1.132.0",
@@ -26,7 +23,9 @@
     "@tanstack/react-start": "^1.132.0",
     "@tanstack/router-plugin": "^1.132.0",
     "@tanstack/valibot-adapter": "^1.166.9",
+    "drizzle-orm": "^0.45.1",
     "lucide-react": "^0.545.0",
+    "postgres": "^3.4.8",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-twc": "^1.5.1",
@@ -34,13 +33,17 @@
     "valibot": "^1.2.0"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.28.0",
+    "@tailwindcss/vite": "^4.2.1",
     "@tanstack/devtools-vite": "^0.3.11",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
     "@types/node": "^22.19.15",
+    "@types/pg": "^8.18.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
+    "drizzle-kit": "^0.31.9",
     "jsdom": "^27.0.0",
     "oxfmt": "^0.40.0",
     "typescript": "^5.7.2",

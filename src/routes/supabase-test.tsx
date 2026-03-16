@@ -2,14 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
-import { supabase } from "#/lib/supabase";
+import { database, t } from "#/lib/database";
 
 export const Route = createFileRoute("/supabase-test")({
   component: SupabaseTestPage,
 });
 
 export const fetchRows = createServerFn().handler(async () => {
-  return await supabase.from("invoices").select("*").limit(5).throwOnError();
+  const db = database();
+  return await db.select().from(t.invoices).limit(5);
 });
 
 function SupabaseTestPage() {
@@ -23,11 +24,11 @@ function SupabaseTestPage() {
     setRows([]);
 
     try {
-      const response = await fetchRows();
+      const data = await fetchRows();
 
       setStatus("Supabase database connected");
-      setDetails(`Returned ${response.data.length} row(s)`);
-      setRows(response.data ?? []);
+      setDetails(`Returned ${data.length} row(s)`);
+      setRows(data ?? []);
     } catch (error: any) {
       setStatus("Connection failed");
       setDetails(error.message ?? String(error));

@@ -1,9 +1,10 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { valibotValidator } from "@tanstack/valibot-adapter";
+import { eq } from "drizzle-orm";
 import * as v from "valibot";
 
-import { supabase } from "#/lib/supabase";
+import { database, t } from "#/lib/database";
 import { formatDate } from "#/lib/utils";
 import { IntStrSchema } from "#/lib/validation";
 
@@ -19,7 +20,7 @@ const FetchInvoiceSchema = v.object({
 
 const UpdateInvoiceSchema = v.object({
   id: v.pipe(v.number(), v.integer()),
-  data: DataSchema,
+  value: DataSchema,
 });
 
 export const Route = createFileRoute("/invoice/$id")({
@@ -31,25 +32,31 @@ export const Route = createFileRoute("/invoice/$id")({
 const fetchInvoice = createServerFn()
   .inputValidator(FetchInvoiceSchema)
   .handler(async ({ data }) => {
-    const response = await supabase
-      .from("invoices")
-      .select("*")
-      .eq("invoice_id", data.id)
-      .limit(1)
-      .maybeSingle()
-      .throwOnError();
+    const db = database();
 
-    if (!response.data) {
+    const invoice = await db
+      .select()
+      .from(t.invoices)
+      .where(eq(t.invoices.invoice_id, data.id))
+      .limit(1)
+      .then((rows) => rows[0]);
+
+    if (!invoice) {
       throw notFound();
     }
 
-    return response.data;
+    return invoice;
   });
 
 const updateInvoice = createServerFn()
   .inputValidator(UpdateInvoiceSchema)
   .handler(async ({ data }) => {
-    await supabase.from("invoices").update(data.data).eq("invoice_id", data.id).throwOnError();
+    const db = database();
+
+    await db
+      .update(t.invoices)
+      .set({ ...data.value, amount: data.value.amount.toFixed(2) })
+      .where(eq(t.invoices.invoice_id, data.id));
   });
 
 function ShowInvoice() {
@@ -63,7 +70,7 @@ function ShowInvoice() {
         onSubmit={async (data) => {
           const id = invoice.invoice_id;
           await updateInvoice({
-            data: { id, data },
+            data: { id, value: data },
           });
         }}
         defaultValues={{

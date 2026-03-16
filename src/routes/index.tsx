@@ -5,12 +5,11 @@ export const Route = createFileRoute("/")({ component: App });
 
 function App() {
   const features = [
-    {
-      icon: <Zap className="h-12 w-12 text-cyan-400" />,
-      title: "Add New Invoice",
+   {
+      icon: <Server className="h-12 w-12 text-cyan-400" />,
+      title: "Test",
       description:
-        "Click Here.",
-      link: "/new-invoice"
+        "test.",
     },
     {
       icon: <Server className="h-12 w-12 text-cyan-400" />,

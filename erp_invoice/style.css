@@ -71,7 +71,7 @@ input, select {
 
 .items-table input:focus {
     border: 1px solid var(--primary);
-    background: white;
+    background: rgb(250, 250, 250);
 }
 
 .btn {
@@ -82,7 +82,7 @@ input, select {
     border: none;
 }
 
-.btn-primary { background: var(--primary); color: white; }
+.btn-primary { background: var(--primary); color: rgb(250, 244, 244); }
 .btn-danger { background: #ef4444; color: white; }
 .btn-outline { background: white; border: 1px solid var(--border); }
 

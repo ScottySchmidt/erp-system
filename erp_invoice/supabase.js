@@ -20,6 +20,7 @@ export async function signIn(email, password) {
 
 export async function signOut() {
   await supabase.auth.signOut();
+  supabase.close();
 }
 
 export function subscribeToTable(table, callback) {

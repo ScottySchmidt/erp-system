@@ -117,7 +117,7 @@ function renderInvoicesTable() {
     const recentInvoices = invoices.slice(0, 5);
 
     if (recentInvoices.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No invoices yet. <a href="index.html">Create one →</a></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No invoices yet. <a href="invoice.html">Create one →</a></td></tr>';
         return;
     }
 
@@ -150,7 +150,7 @@ window.showAllInvoices = function() {
 };
 
 window.viewInvoice = function(id) {
-    window.location.href = `index.html?id=${id}`;
+    window.location.href = `invoice.html?id=${id}`;
 };
 
 window.printInvoice = function(invoiceNumber) {

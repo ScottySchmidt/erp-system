@@ -24,6 +24,7 @@ async function handleLogin(e) {
 
         if (result.success) {
     console.log('Login success:', result.user.email);
+    window.location.href = 'dashboard.html';
 
 
     const userData = {

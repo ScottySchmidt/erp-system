@@ -14,33 +14,33 @@ function App() {
   },
     {
       icon: <Server className="h-12 w-12 text-cyan-400" />,
-      title: "Flexible Server Side Rendering",
+      title: "Add Invoice",
       description:
-        "Full-document SSR, streaming, and progressive enhancement out of the box. Control exactly what renders where.",
+        "Add a voucher. Click here.",
     },
     {
       icon: <RouteIcon className="h-12 w-12 text-cyan-400" />,
       title: "API Routes",
       description:
-        "Build type-safe API endpoints alongside your application. No separate backend needed.",
+        "Other API Route Functions.",
     },
     {
       icon: <Shield className="h-12 w-12 text-cyan-400" />,
-      title: "Strongly Typed Everything",
+      title: "Add Vendor",
       description:
-        "End-to-end type safety from server to client. Catch errors before they reach production.",
+        "Click here to add a new vendor who needs to be paid.",
     },
     {
       icon: <Waves className="h-12 w-12 text-cyan-400" />,
-      title: "Full Streaming Support",
+      title: "Edit Accounting Info",
       description:
-        "Stream data from server to client progressively. Perfect for AI applications and real-time updates.",
+        "Add, delete or updated accounting information",
     },
     {
       icon: <Sparkles className="h-12 w-12 text-cyan-400" />,
-      title: "Next Generation Ready",
+      title: "View Financial Results",
       description:
-        "Built from the ground up for modern web applications. Deploy anywhere JavaScript runs.",
+        "Search by customer made queries",
     },
   ];
 

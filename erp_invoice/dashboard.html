@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dashboard-body">
+    <header class="header">
+        <div class="header-left">
+            <h1>ERP Dashboard</h1>
+            <p>Welcome back, <span id="userName">User</span></p>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-secondary" onclick="window.location.href='index.html'">+ New Invoice</button>
+            <button class="btn btn-outline" id="logoutBtn">Logout</button>
+        </div>
+    </header>
+    <section class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📄</div>
+            <div>
+                <h3 id="totalInvoices">0</h3>
+                <p>Total Invoices</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div>
+                <h3 id="totalRevenue">$0</h3>
+                <p>Revenue</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div>
+                <h3 id="totalCustomers">0</h3>
+                <p>Customers</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📈</div>
+            <div>
+                <h3 id="conversionRate">0%</h3>
+                <p>Conversion</p>
+            </div>
+        </div>
+    </section>
+    <section class="charts-row">
+        <div class="chart-card">
+            <h3>Revenue This Month</h3>
+            <canvas id="revenueChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Invoice Status</h3>
+            <canvas id="statusChart"></canvas>
+        </div>
+    </section>
+    <section class="table-section">
+        <div class="table-header">
+            <h3>Recent Invoices</h3>
+            <a href="#" class="view-all" onclick="showAllInvoices()">View All →</a>
+        </div>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="invoicesTable">
+                    <tr>
+                        <td colspan="6">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <section class="quick-actions">
+        <h3>Quick Actions</h3>
+        <div class="action-buttons">
+            <button class="action-btn" onclick="window.location.href='index.html'">
+                <span class="action-icon">📄</span>
+                New Invoice
+            </button>
+            <button class="action-btn" onclick="window.location.href='customers.html'">
+                <span class="action-icon">👥</span>
+                Manage Customers
+            </button>
+            <button class="action-btn" onclick="exportData()">
+                <span class="action-icon">📥</span>
+                Export Reports
+            </button>
+        </div>
+    </section>
+    <script>
+    window.addEventListener('load', function() {
+        const user = sessionStorage.getItem('user');
+        if (!user) {
+            window.location.href = 'login.html';
+        } else {
+            console.log('✅ Dashboard: User loaded');
+        }
+    });
+    </script>
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html>

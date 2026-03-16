@@ -53,10 +53,7 @@ const updateInvoice = createServerFn()
   .handler(async ({ data }) => {
     const db = database();
 
-    await db
-      .update(t.invoices)
-      .set({ ...data.value, amount: data.value.amount.toFixed(2) })
-      .where(eq(t.invoices.invoice_id, data.id));
+    await db.update(t.invoices).set(data.value).where(eq(t.invoices.invoice_id, data.id));
   });
 
 function ShowInvoice() {

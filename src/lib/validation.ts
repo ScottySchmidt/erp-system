@@ -13,3 +13,10 @@ export const NumStrSchema = v.pipe(
   v.decimal("Must be a number"),
   v.transform(Number),
 );
+
+export const MoneySchema = v.pipe(
+  v.string(),
+  v.nonEmpty("A number is required"),
+  v.decimal("Must be a number"),
+  v.regex(/^\d+(\.\d{1,2})?$/, "Can only have up to 2 decimal places"),
+);

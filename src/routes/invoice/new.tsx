@@ -15,10 +15,7 @@ const createInvoice = createServerFn()
   .handler(async ({ data }) => {
     const db = database();
 
-    await db.insert(t.invoices).values({
-      ...data,
-      amount: data.amount.toFixed(2),
-    });
+    await db.insert(t.invoices).values(data);
   });
 
 function NewInvoice() {

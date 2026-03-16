@@ -1,54 +1,50 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState } from 'react'
-import { supabase } from '#/lib/supabase'
-import { createServerFn } from '@tanstack/react-start'
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 
-export const Route = createFileRoute('/supabase-test')({
+import { supabase } from "#/lib/supabase";
+
+export const Route = createFileRoute("/supabase-test")({
   component: SupabaseTestPage,
-})
+});
 
 export const fetchRows = createServerFn().handler(async () => {
-  const response = await supabase
-    .from('invoices')
-    .select('*')
-    .limit(5);
+  const response = await supabase.from("invoices").select("*").limit(5);
 
-    if (response.error) {
-      throw response.error;
-    }
-
-    return response.data;
-})
-
-function SupabaseTestPage() {
-  const [status, setStatus] = useState('Not tested yet')
-  const [details, setDetails] = useState('')
-  const [rows, setRows] = useState<any[]>([])
-
-  const testConnection = async () => {
-    setStatus('Testing database...')
-    setDetails('')
-    setRows([])
-
-    try {
-      const data = await fetchRows()
-
-      setStatus('Supabase database connected')
-      setDetails(`Returned ${data?.length ?? 0} row(s)`)
-      setRows(data ?? [])
-    } catch (err) {
-      setStatus('Connection failed')
-      setDetails(err instanceof Error ? err.message : 'Unknown error')
-    }
+  if (response.error) {
+    throw response.error;
   }
 
+  return response.data;
+});
+
+function SupabaseTestPage() {
+  const [status, setStatus] = useState("Not tested yet");
+  const [details, setDetails] = useState("");
+  const [rows, setRows] = useState<any[]>([]);
+
+  const testConnection = async () => {
+    setStatus("Testing database...");
+    setDetails("");
+    setRows([]);
+
+    try {
+      const data = await fetchRows();
+
+      setStatus("Supabase database connected");
+      setDetails(`Returned ${data?.length ?? 0} row(s)`);
+      setRows(data ?? []);
+    } catch (err) {
+      setStatus("Connection failed");
+      setDetails(err instanceof Error ? err.message : "Unknown error");
+    }
+  };
+
   return (
-    <main className="page-wrap px-4 pb-8 pt-14">
+    <main className="page-wrap px-4 pt-14 pb-8">
       <section className="island-shell rounded-4xl px-6 py-10 sm:px-10 sm:py-14">
         <p className="island-kicker mb-3">Test Page</p>
-        <h1 className="mb-5 text-4xl font-bold text-(--sea-ink)">
-          Supabase Database Test
-        </h1>
+        <h1 className="mb-5 text-4xl font-bold text-(--sea-ink)">Supabase Database Test</h1>
 
         <div className="mb-6 flex gap-3">
           <button
@@ -76,8 +72,7 @@ function SupabaseTestPage() {
             {JSON.stringify(rows, null, 2)}
           </pre>
         </div>
-
       </section>
     </main>
-  )
+  );
 }

@@ -1,5 +1,5 @@
-import { env } from 'cloudflare:workers';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
+import { env } from "cloudflare:workers";
 
 const supabaseUrl = env.SUPABASE_URL;
 const supabaseKey = env.SUPABASE_KEY;

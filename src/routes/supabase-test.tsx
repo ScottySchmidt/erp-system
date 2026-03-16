@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '#/lib/supabase'
 import { createServerFn } from '@tanstack/react-start'
 
 export const Route = createFileRoute('/supabase-test')({

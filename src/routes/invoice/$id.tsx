@@ -19,7 +19,7 @@ const FetchInvoiceSchema = v.object({
 
 const UpdateInvoiceSchema = v.object({
   id: v.pipe(v.number(), v.integer()),
-  columns: DataSchema,
+  data: DataSchema,
 });
 
 export const Route = createFileRoute("/invoice/$id")({
@@ -49,7 +49,7 @@ const fetchInvoice = createServerFn()
 const updateInvoice = createServerFn()
   .inputValidator(UpdateInvoiceSchema)
   .handler(async ({ data }) => {
-    await supabase.from("invoices").update(data.columns).eq("invoice_id", data.id).throwOnError();
+    await supabase.from("invoices").update(data.data).eq("invoice_id", data.id).throwOnError();
   });
 
 function ShowInvoice() {
@@ -61,11 +61,9 @@ function ShowInvoice() {
       <InvoiceForm
         submitText="Update Invoice"
         onSubmit={async (data) => {
+          const id = invoice.invoice_id;
           await updateInvoice({
-            data: {
-              id: invoice.invoice_id,
-              columns: data,
-            },
+            data: { id, data },
           });
         }}
         defaultValues={{

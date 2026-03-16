@@ -10,6 +10,7 @@ function App() {
       title: "Add New Invoice",
       description:
         "Click Here.",
+      link: "/new-invoice"
     },
     {
       icon: <Server className="h-12 w-12 text-cyan-400" />,

@@ -1,23 +1,26 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
+import { valibotValidator } from "@tanstack/valibot-adapter";
+import * as v from "valibot";
 
 import { supabase } from "#/lib/supabase";
 
+const FetchInvoiceSchema = v.object({
+  id: v.pipe(v.number(), v.integer()),
+});
+
+const FetchInvoiceRouteSchema = v.object({
+  id: v.pipe(v.string(), v.transform(parseInt), FetchInvoiceSchema.entries.id),
+});
+
 export const Route = createFileRoute("/invoice/$id")({
-  loader: ({ params }) =>
-    fetchInvoice({
-      data: { id: Number(params.id) },
-    }),
+  loader: ({ params }) => fetchInvoice({ data: params }),
   component: ShowInvoice,
+  params: valibotValidator(FetchInvoiceRouteSchema),
 });
 
 const fetchInvoice = createServerFn()
-  .inputValidator(
-    z.object({
-      id: z.number().int().positive(),
-    }),
-  )
+  .inputValidator(FetchInvoiceSchema)
   .handler(async ({ data }) => {
     const response = await supabase
       .from("invoices")

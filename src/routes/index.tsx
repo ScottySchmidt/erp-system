@@ -77,6 +77,12 @@ function App() {
             >
               Documentation
             </a>
+            <a
+              href="/erp/login"
+              className="rounded-lg border border-cyan-400/50 px-8 py-3 font-semibold text-cyan-200 transition-colors hover:border-cyan-300 hover:text-white"
+            >
+              login
+            </a>
             <p className="mt-2 text-sm text-gray-400">
               Begin your TanStack Start journey by editing{" "}
               <code className="rounded bg-slate-700 px-2 py-1 text-cyan-400">

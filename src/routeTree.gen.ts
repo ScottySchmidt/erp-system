@@ -13,6 +13,9 @@ import { Route as SupabaseTestRouteImport } from './routes/supabase-test'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InvoiceNewRouteImport } from './routes/invoice/new'
 import { Route as InvoiceIdRouteImport } from './routes/invoice/$id'
+import { Route as ErpLoginRouteImport } from './routes/erp/login'
+import { Route as ErpInvoiceRouteImport } from './routes/erp/invoice'
+import { Route as ErpDashboardRouteImport } from './routes/erp/dashboard'
 
 const SupabaseTestRoute = SupabaseTestRouteImport.update({
   id: '/supabase-test',
@@ -34,16 +37,37 @@ const InvoiceIdRoute = InvoiceIdRouteImport.update({
   path: '/invoice/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ErpLoginRoute = ErpLoginRouteImport.update({
+  id: '/erp/login',
+  path: '/erp/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ErpInvoiceRoute = ErpInvoiceRouteImport.update({
+  id: '/erp/invoice',
+  path: '/erp/invoice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ErpDashboardRoute = ErpDashboardRouteImport.update({
+  id: '/erp/dashboard',
+  path: '/erp/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/supabase-test': typeof SupabaseTestRoute
+  '/erp/dashboard': typeof ErpDashboardRoute
+  '/erp/invoice': typeof ErpInvoiceRoute
+  '/erp/login': typeof ErpLoginRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/supabase-test': typeof SupabaseTestRoute
+  '/erp/dashboard': typeof ErpDashboardRoute
+  '/erp/invoice': typeof ErpInvoiceRoute
+  '/erp/login': typeof ErpLoginRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
 }
@@ -51,20 +75,48 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/supabase-test': typeof SupabaseTestRoute
+  '/erp/dashboard': typeof ErpDashboardRoute
+  '/erp/invoice': typeof ErpInvoiceRoute
+  '/erp/login': typeof ErpLoginRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/supabase-test' | '/invoice/$id' | '/invoice/new'
+  fullPaths:
+    | '/'
+    | '/supabase-test'
+    | '/erp/dashboard'
+    | '/erp/invoice'
+    | '/erp/login'
+    | '/invoice/$id'
+    | '/invoice/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/supabase-test' | '/invoice/$id' | '/invoice/new'
-  id: '__root__' | '/' | '/supabase-test' | '/invoice/$id' | '/invoice/new'
+  to:
+    | '/'
+    | '/supabase-test'
+    | '/erp/dashboard'
+    | '/erp/invoice'
+    | '/erp/login'
+    | '/invoice/$id'
+    | '/invoice/new'
+  id:
+    | '__root__'
+    | '/'
+    | '/supabase-test'
+    | '/erp/dashboard'
+    | '/erp/invoice'
+    | '/erp/login'
+    | '/invoice/$id'
+    | '/invoice/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SupabaseTestRoute: typeof SupabaseTestRoute
+  ErpDashboardRoute: typeof ErpDashboardRoute
+  ErpInvoiceRoute: typeof ErpInvoiceRoute
+  ErpLoginRoute: typeof ErpLoginRoute
   InvoiceIdRoute: typeof InvoiceIdRoute
   InvoiceNewRoute: typeof InvoiceNewRoute
 }
@@ -99,12 +151,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InvoiceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/erp/login': {
+      id: '/erp/login'
+      path: '/erp/login'
+      fullPath: '/erp/login'
+      preLoaderRoute: typeof ErpLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/erp/invoice': {
+      id: '/erp/invoice'
+      path: '/erp/invoice'
+      fullPath: '/erp/invoice'
+      preLoaderRoute: typeof ErpInvoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/erp/dashboard': {
+      id: '/erp/dashboard'
+      path: '/erp/dashboard'
+      fullPath: '/erp/dashboard'
+      preLoaderRoute: typeof ErpDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SupabaseTestRoute: SupabaseTestRoute,
+  ErpDashboardRoute: ErpDashboardRoute,
+  ErpInvoiceRoute: ErpInvoiceRoute,
+  ErpLoginRoute: ErpLoginRoute,
   InvoiceIdRoute: InvoiceIdRoute,
   InvoiceNewRoute: InvoiceNewRoute,
 }

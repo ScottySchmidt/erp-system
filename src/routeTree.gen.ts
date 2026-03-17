@@ -16,6 +16,7 @@ import { Route as InvoiceIdRouteImport } from './routes/invoice/$id'
 import { Route as ErpLoginRouteImport } from './routes/erp/login'
 import { Route as ErpInvoiceRouteImport } from './routes/erp/invoice'
 import { Route as ErpDashboardRouteImport } from './routes/erp/dashboard'
+import { Route as ErpRegisterRouteImport } from './routes/erp/register'
 
 const SupabaseTestRoute = SupabaseTestRouteImport.update({
   id: '/supabase-test',
@@ -52,6 +53,11 @@ const ErpDashboardRoute = ErpDashboardRouteImport.update({
   path: '/erp/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ErpRegisterRoute = ErpRegisterRouteImport.update({
+  id: '/erp/register',
+  path: '/erp/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/erp/dashboard': typeof ErpDashboardRoute
   '/erp/invoice': typeof ErpInvoiceRoute
   '/erp/login': typeof ErpLoginRoute
+  '/erp/register': typeof ErpRegisterRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/erp/dashboard': typeof ErpDashboardRoute
   '/erp/invoice': typeof ErpInvoiceRoute
   '/erp/login': typeof ErpLoginRoute
+  '/erp/register': typeof ErpRegisterRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/erp/dashboard': typeof ErpDashboardRoute
   '/erp/invoice': typeof ErpInvoiceRoute
   '/erp/login': typeof ErpLoginRoute
+  '/erp/register': typeof ErpRegisterRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/erp/dashboard'
     | '/erp/invoice'
     | '/erp/login'
+    | '/erp/register'
     | '/invoice/$id'
     | '/invoice/new'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/erp/dashboard'
     | '/erp/invoice'
     | '/erp/login'
+    | '/erp/register'
     | '/invoice/$id'
     | '/invoice/new'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/erp/dashboard'
     | '/erp/invoice'
     | '/erp/login'
+    | '/erp/register'
     | '/invoice/$id'
     | '/invoice/new'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   ErpDashboardRoute: typeof ErpDashboardRoute
   ErpInvoiceRoute: typeof ErpInvoiceRoute
   ErpLoginRoute: typeof ErpLoginRoute
+  ErpRegisterRoute: typeof ErpRegisterRoute
   InvoiceIdRoute: typeof InvoiceIdRoute
   InvoiceNewRoute: typeof InvoiceNewRoute
 }

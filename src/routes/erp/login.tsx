@@ -112,6 +112,17 @@ function Login() {
               {status === "loading" ? "Signing in…" : "Login"}
             </button>
           </form>
+
+          <div className="mt-4 text-sm text-slate-400">
+            Need an account?{" "}
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/erp/register" })}
+              className="font-semibold text-cyan-200 hover:underline"
+            >
+              Register
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -45,8 +45,8 @@ async function initSupabase() {
     try {
         const { createClient } = await import('https://cdn.skypack.dev/@supabase/supabase-js@2');
         supabase = createClient(
-            'https://ihdngvgfympjiepwzgqn.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloZG5ndmdmeW1wamllcHd6Z3FuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjE2NjgsImV4cCI6MjA4ODU5NzY2OH0.xj0GS_BG3J8VWGnGV04z8MS_JsQ9P-wdblQfCSHE4JE'
+            'https://uasshkfuiyslfhaaddrb.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhc3Noa2Z1aXlzbGZoYWFkZHJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNDc1MDIsImV4cCI6MjA4NjkyMzUwMn0.8W6xIYwIz1U2_BlNNWIG200qAF4pjX97j6Yi-4njYh4'
         );
         const { data: { session } } = await supabase.auth.getSession();
         currentUser = session?.user;
@@ -60,10 +60,10 @@ async function loadCustomers() {
 
     try {
         if (supabase && currentUser) {
-            const { data } = await supabase.from('customers').select('id, name');
+            const { data } = await supabase.from('vendor').select('vendor_id, vendor_name');
             if (data?.length) {
                 select.innerHTML = '<option value="">Select Customer</option>' +
-                    data.map(c => `<option value="${c.name}" data-id="${c.id}">${c.name}</option>`).join('');
+                    data.map(c => `<option value="${c.vendor_name}" data-id="${c.vendor_id}">${c.vendor_name}</option>`).join('');
                 return;
             }
         }
@@ -145,7 +145,7 @@ function updateTotals() {
     document.getElementById('taxDisplay').textContent = `$${tax.toFixed(2)}`;
     document.getElementById('totalDisplay').textContent = `$${total.toFixed(2)}`;
 
-    console.log('📊 Totals:', { subtotal, tax, total });
+    console.log('Totals:', { subtotal, tax, total });
 }
 
 function saveDraft() {
@@ -172,7 +172,7 @@ window.generateInvoice = async function() {
     if (supabase && currentUser) {
         try {
             const { data } = await supabase.from('invoices').insert([invoiceData]).select().single();
-            console.log('✅ Cloud saved:', data.id);
+            console.log('Cloud saved:', data.id);
             await generatePDF(data);
         } catch (e) {
             console.error('Cloud save failed:', e);

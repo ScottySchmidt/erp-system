@@ -39,7 +39,7 @@ async function loadDashboardData() {
 
 async function loadFromSupabase() {
     const { createClient } = await import('https://cdn.skypack.dev/@supabase/supabase-js@2');
-    const supabase = createClient('https://ihdngvgfympjiepwzgqn.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloZG5ndmdmeW1wamllcHd6Z3FuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMjE2NjgsImV4cCI6MjA4ODU5NzY2OH0.xj0GS_BG3J8VWGnGV04z8MS_JsQ9P-wdblQfCSHE4JE');
+    const supabase = createClient('https://uasshkfuiyslfhaaddrb.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhc3Noa2Z1aXlzbGZoYWFkZHJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzNDc1MDIsImV4cCI6MjA4NjkyMzUwMn0.8W6xIYwIz1U2_BlNNWIG200qAF4pjX97j6Yi-4njYh4');
 
     const [invoicesRes, customersRes] = await Promise.all([
         supabase.from('invoices').select('*').order('created_at', { ascending: false }),

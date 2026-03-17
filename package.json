@@ -15,6 +15,7 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.99.2",
     "@tanstack/react-devtools": "^0.7.0",
     "@tanstack/react-form": "^1.28.5",
     "@tanstack/react-router": "^1.132.0",

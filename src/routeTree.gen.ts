@@ -13,10 +13,10 @@ import { Route as SupabaseTestRouteImport } from './routes/supabase-test'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InvoiceNewRouteImport } from './routes/invoice/new'
 import { Route as InvoiceIdRouteImport } from './routes/invoice/$id'
+import { Route as ErpRegisterRouteImport } from './routes/erp/register'
 import { Route as ErpLoginRouteImport } from './routes/erp/login'
 import { Route as ErpInvoiceRouteImport } from './routes/erp/invoice'
 import { Route as ErpDashboardRouteImport } from './routes/erp/dashboard'
-import { Route as ErpRegisterRouteImport } from './routes/erp/register'
 
 const SupabaseTestRoute = SupabaseTestRouteImport.update({
   id: '/supabase-test',
@@ -38,6 +38,11 @@ const InvoiceIdRoute = InvoiceIdRouteImport.update({
   path: '/invoice/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ErpRegisterRoute = ErpRegisterRouteImport.update({
+  id: '/erp/register',
+  path: '/erp/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ErpLoginRoute = ErpLoginRouteImport.update({
   id: '/erp/login',
   path: '/erp/login',
@@ -51,11 +56,6 @@ const ErpInvoiceRoute = ErpInvoiceRouteImport.update({
 const ErpDashboardRoute = ErpDashboardRouteImport.update({
   id: '/erp/dashboard',
   path: '/erp/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ErpRegisterRoute = ErpRegisterRouteImport.update({
-  id: '/erp/register',
-  path: '/erp/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -164,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InvoiceIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/erp/register': {
+      id: '/erp/register'
+      path: '/erp/register'
+      fullPath: '/erp/register'
+      preLoaderRoute: typeof ErpRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/erp/login': {
       id: '/erp/login'
       path: '/erp/login'
@@ -194,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   ErpDashboardRoute: ErpDashboardRoute,
   ErpInvoiceRoute: ErpInvoiceRoute,
   ErpLoginRoute: ErpLoginRoute,
+  ErpRegisterRoute: ErpRegisterRoute,
   InvoiceIdRoute: InvoiceIdRoute,
   InvoiceNewRoute: InvoiceNewRoute,
 }

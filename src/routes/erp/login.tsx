@@ -114,18 +114,17 @@ function Login() {
           </form>
 
           <div className="mt-4 text-sm text-slate-400">
-            Forgot password?{" "}
+            
             <button
               type="button"
               onClick={() => navigate({ to: "/erp/reset-password" })}
               className="font-semibold text-cyan-200 hover:underline"
             >
-              Reset it
+              Forgot password?
             </button>
           </div>
 
-          <div className="mt-2 text-sm text-slate-400">
-            Need an account?{" "}
+          <div className="mt-2 text-sm text-slate-400"> 
             <button
               type="button"
               onClick={() => navigate({ to: "/erp/register" })}

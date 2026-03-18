@@ -3,38 +3,59 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { env } from "cloudflare:workers";
+import z from "zod";
 
 export const Route = createFileRoute("/erp/reset-password")({
   component: ResetPassword,
 });
 
-const sendResetEmail = createServerFn()
-  .validator((data: { email: string; redirectTo?: string }) => data)
-  .handler(async ({ data }) => {
-    const email = data.email?.trim().toLowerCase();
-    if (!email) {
-      throw new Error("Email is required");
-    }
+const ResetInput = z.object({
+  email: z.string().email(),
+  redirectTo: z.string().optional(),
+});
 
+const sendResetEmail = createServerFn()
+  .inputValidator(ResetInput)
+  .handler(async ({ data }) => {
+    const email = data.email.trim().toLowerCase();
     const redirectTo = data.redirectTo;
 
-    // Verify the user exists using admin privileges
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+    const supabaseUrl =
+      env.SUPABASE_URL ?? process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+    const serviceKey =
+      env.SUPABASE_SERVICE_ROLE ??
+      env.SUPABASE_KEY ??
+      process.env.SUPABASE_SERVICE_ROLE ??
+      process.env.VITE_SUPABASE_SERVICE_ROLE;
+    const anonKey =
+      env.SUPABASE_ANON_KEY ??
+      process.env.SUPABASE_ANON_KEY ??
+      process.env.VITE_SUPABASE_ANON_KEY;
 
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(email);
-    if (userError || !userData?.user) {
-      throw new Error("Email not found");
+    if (!supabaseUrl) {
+      throw new Error("Supabase URL is not configured.");
     }
 
-    // Send Supabase-managed reset email
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo,
-    });
-    if (error) {
-      throw error;
+    const key = serviceKey ?? anonKey;
+    if (!key) {
+      throw new Error("Supabase credentials are not configured.");
     }
 
-    return { ok: true };
+    const supabase = createClient(supabaseUrl, key);
+
+    // If we have service key, verify existence; otherwise skip check (but still send)
+    if (serviceKey) {
+      const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(email);
+      if (userError || !userData?.user) {
+        throw new Error("Email not found");
+      }
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw error;
+
+    // Generic response to avoid enumeration if we only had anon key
+    return { ok: true, checked: Boolean(serviceKey) };
   });
 
 type Status = "idle" | "loading" | "success" | "error";

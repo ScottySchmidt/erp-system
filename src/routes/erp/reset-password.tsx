@@ -1,11 +1,41 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-
-import { supabaseBrowser } from "#/lib/supabaseBrowser";
+import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
+import { env } from "cloudflare:workers";
 
 export const Route = createFileRoute("/erp/reset-password")({
   component: ResetPassword,
 });
+
+const sendResetEmail = createServerFn()
+  .validator((data: { email: string; redirectTo?: string }) => data)
+  .handler(async ({ data }) => {
+    const email = data.email?.trim().toLowerCase();
+    if (!email) {
+      throw new Error("Email is required");
+    }
+
+    const redirectTo = data.redirectTo;
+
+    // Verify the user exists using admin privileges
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
+
+    const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(email);
+    if (userError || !userData?.user) {
+      throw new Error("Email not found");
+    }
+
+    // Send Supabase-managed reset email
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+    if (error) {
+      throw error;
+    }
+
+    return { ok: true };
+  });
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -21,14 +51,8 @@ function ResetPassword() {
     setMessage("");
 
     try {
-      if (!supabaseBrowser) {
-        throw new Error("Supabase client is not configured");
-      }
-
       const redirectTo = `${window.location.origin}/erp/login`;
-      const { error } = await supabaseBrowser.auth.resetPasswordForEmail(email, { redirectTo });
-
-      if (error) throw error;
+      await sendResetEmail({ data: { email, redirectTo } });
 
       setStatus("success");
       setMessage("Password reset email sent. Please check your inbox.");

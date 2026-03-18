@@ -13,6 +13,7 @@ import { Route as SupabaseTestRouteImport } from './routes/supabase-test'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InvoiceNewRouteImport } from './routes/invoice/new'
 import { Route as InvoiceIdRouteImport } from './routes/invoice/$id'
+import { Route as ErpResetPasswordRouteImport } from './routes/erp/reset-password'
 import { Route as ErpRegisterRouteImport } from './routes/erp/register'
 import { Route as ErpLoginRouteImport } from './routes/erp/login'
 import { Route as ErpInvoiceRouteImport } from './routes/erp/invoice'
@@ -36,6 +37,11 @@ const InvoiceNewRoute = InvoiceNewRouteImport.update({
 const InvoiceIdRoute = InvoiceIdRouteImport.update({
   id: '/invoice/$id',
   path: '/invoice/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ErpResetPasswordRoute = ErpResetPasswordRouteImport.update({
+  id: '/erp/reset-password',
+  path: '/erp/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErpRegisterRoute = ErpRegisterRouteImport.update({
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/erp/invoice': typeof ErpInvoiceRoute
   '/erp/login': typeof ErpLoginRoute
   '/erp/register': typeof ErpRegisterRoute
+  '/erp/reset-password': typeof ErpResetPasswordRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
 }
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/erp/invoice': typeof ErpInvoiceRoute
   '/erp/login': typeof ErpLoginRoute
   '/erp/register': typeof ErpRegisterRoute
+  '/erp/reset-password': typeof ErpResetPasswordRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
 }
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/erp/invoice': typeof ErpInvoiceRoute
   '/erp/login': typeof ErpLoginRoute
   '/erp/register': typeof ErpRegisterRoute
+  '/erp/reset-password': typeof ErpResetPasswordRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
 }
@@ -99,6 +108,7 @@ export interface FileRouteTypes {
     | '/erp/invoice'
     | '/erp/login'
     | '/erp/register'
+    | '/erp/reset-password'
     | '/invoice/$id'
     | '/invoice/new'
   fileRoutesByTo: FileRoutesByTo
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/erp/invoice'
     | '/erp/login'
     | '/erp/register'
+    | '/erp/reset-password'
     | '/invoice/$id'
     | '/invoice/new'
   id:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/erp/invoice'
     | '/erp/login'
     | '/erp/register'
+    | '/erp/reset-password'
     | '/invoice/$id'
     | '/invoice/new'
   fileRoutesById: FileRoutesById
@@ -130,6 +142,7 @@ export interface RootRouteChildren {
   ErpInvoiceRoute: typeof ErpInvoiceRoute
   ErpLoginRoute: typeof ErpLoginRoute
   ErpRegisterRoute: typeof ErpRegisterRoute
+  ErpResetPasswordRoute: typeof ErpResetPasswordRoute
   InvoiceIdRoute: typeof InvoiceIdRoute
   InvoiceNewRoute: typeof InvoiceNewRoute
 }
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/invoice/$id'
       fullPath: '/invoice/$id'
       preLoaderRoute: typeof InvoiceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/erp/reset-password': {
+      id: '/erp/reset-password'
+      path: '/erp/reset-password'
+      fullPath: '/erp/reset-password'
+      preLoaderRoute: typeof ErpResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/erp/register': {
@@ -202,6 +222,7 @@ const rootRouteChildren: RootRouteChildren = {
   ErpInvoiceRoute: ErpInvoiceRoute,
   ErpLoginRoute: ErpLoginRoute,
   ErpRegisterRoute: ErpRegisterRoute,
+  ErpResetPasswordRoute: ErpResetPasswordRoute,
   InvoiceIdRoute: InvoiceIdRoute,
   InvoiceNewRoute: InvoiceNewRoute,
 }

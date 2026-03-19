@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 
-import { database, t } from "#/lib/database";
+import { t } from "#/lib/database";
+import { DatabaseProvider } from "#/lib/middleware";
 import { formatDate } from "#/lib/utils";
 
 import { DataSchema, InvoiceForm } from "./-form";
@@ -11,7 +12,7 @@ export const Route = createFileRoute("/invoice/new")({
 });
 
 const createInvoice = createServerFn()
-  .middleware([database])
+  .middleware([DatabaseProvider])
   .inputValidator(DataSchema)
   .handler(async ({ data, context }) => {
     await context.db.insert(t.invoices).values({

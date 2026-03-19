@@ -3,6 +3,8 @@ import { useState } from "react";
 import { twc } from "react-twc";
 import * as v from "valibot";
 
+import { Input } from "#/components/form/Input";
+import { Label } from "#/components/form/Label";
 import { IntStrSchema, MoneySchema } from "#/lib/validation";
 
 export const DataSchema = v.object({
@@ -174,16 +176,3 @@ export function InvoiceForm(props: InvoiceFormProps) {
     </form>
   );
 }
-
-const Label = twc.label`
-  block mb-1
-  font-medium text-sm
-  text-gray-700
-`;
-
-const Input = twc.input`
-  block w-full rounded-sm
-  border-gray-300 focus:border-gray-400
-  focus:ring-4 focus:ring-gray-300 focus:ring-opacity-50
-  transition-shadow
-`;

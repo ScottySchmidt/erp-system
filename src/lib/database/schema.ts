@@ -8,6 +8,7 @@ import {
   boolean,
   timestamp,
   pgEnum,
+  uuid,
 } from "drizzle-orm/pg-core";
 
 export const enum_pay_type = pgEnum("pay_type", ["cash", "check", "credit_card"]);
@@ -54,7 +55,16 @@ export const gl_accounts = pgTable("gl_accounts", {
 
 export const users = pgTable("users", {
   user_id: bigint({ mode: "number" }).primaryKey().generatedByDefaultAsIdentity(),
+  auth_id: text().notNull(),
   created_at: timestamp({ withTimezone: true, mode: "string" }).defaultNow().notNull(),
   role_id: bigint({ mode: "number" }),
   dept_id: bigint({ mode: "number" }),
+  email: text().notNull(),
+  full_name: text().notNull(),
+});
+
+export const sessions = pgTable("sessions", {
+  session_id: uuid().primaryKey().defaultRandom(),
+  user_id: bigint({ mode: "number" }).notNull(),
+  created_at: timestamp({ withTimezone: true, mode: "string" }).defaultNow().notNull(),
 });

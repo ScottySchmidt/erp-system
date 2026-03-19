@@ -3,14 +3,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { desc } from "drizzle-orm";
 import { useState } from "react";
 
-import { database, t } from "#/lib/database";
+import { t } from "#/lib/database";
+import { DatabaseProvider } from "#/lib/middleware";
 
 export const Route = createFileRoute("/supabase-test")({
   component: SupabaseTestPage,
 });
 
 export const fetchRows = createServerFn()
-  .middleware([database])
+  .middleware([DatabaseProvider])
   .handler(async ({ context }) => {
     return await context.db.select().from(t.invoices).orderBy(desc(t.invoices.invoice_id)).limit(5);
   });

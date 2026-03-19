@@ -4,7 +4,8 @@ import { valibotValidator } from "@tanstack/valibot-adapter";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
 
-import { database, t } from "#/lib/database";
+import { t } from "#/lib/database";
+import { DatabaseProvider } from "#/lib/middleware";
 import { formatDate } from "#/lib/utils";
 import { IntStrSchema } from "#/lib/validation";
 
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/invoice/$id")({
 });
 
 const fetchInvoice = createServerFn()
-  .middleware([database])
+  .middleware([DatabaseProvider])
   .inputValidator(FetchInvoiceSchema)
   .handler(async ({ data, context }) => {
     const invoice = await context.db
@@ -48,7 +49,7 @@ const fetchInvoice = createServerFn()
   });
 
 const updateInvoice = createServerFn()
-  .middleware([database])
+  .middleware([DatabaseProvider])
   .inputValidator(UpdateInvoiceSchema)
   .handler(async ({ data, context }) => {
     await context.db.update(t.invoices).set(data.value).where(eq(t.invoices.invoice_id, data.id));

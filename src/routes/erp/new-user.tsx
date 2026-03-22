@@ -5,7 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { database, t } from "#/lib/database";
 import { supabaseBrowser } from "#/lib/supabaseBrowser";
 
-export const Route = createFileRoute("/erp/new-user5")({
+export const Route = createFileRoute("/erp/new-user")({
   component: Register,
 });
 
@@ -28,10 +28,10 @@ const DEPT_OPTIONS = [
   { id: 6, label: "Operations" },
 ] as const;
 
-const parseRequiredInt = (value: string, label: string): number => {
+const parseRequiredInt = (value: string, fieldLabel: string): number => {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed)) {
-    throw new Error(`Please select a valid ${label}.`);
+    throw new Error(`Please select a valid ${fieldLabel}.`);
   }
   return parsed;
 };
@@ -40,14 +40,10 @@ const createUserRecord = createServerFn({ method: "POST" })
   .middleware([database])
   .handler(async ({ data, context }) => {
     const payload = data as {
-      user_id: string;
+      full_name: string;
       role_id: number;
       dept_id: number;
     };
-
-    if (!payload.user_id) throw new Error("Missing user_id.");
-    if (!Number.isInteger(payload.role_id)) throw new Error("Invalid role_id.");
-    if (!Number.isInteger(payload.dept_id)) throw new Error("Invalid dept_id.");
 
     await context.db.insert(t.users).values({
       user_id: payload.user_id,
@@ -83,7 +79,7 @@ function Register() {
 
     try {
       if (!supabaseBrowser) {
-        throw new Error("Supabase is not configured.");
+        throw new Error("Supabase is not configured. Check environment variables.");
       }
 
       const roleId = parseRequiredInt(form.role_id, "role");
@@ -97,7 +93,9 @@ function Register() {
         },
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        throw authError;
+      }
 
       const userId = authData.user?.id;
       if (!userId) {
@@ -106,9 +104,9 @@ function Register() {
 
       await createUserRecord({
         data: {
-          user_id: userId,
           role_id: roleId,
           dept_id: deptId,
+          full_name: "Scott Schmidt"
         },
       });
 

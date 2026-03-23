@@ -1,87 +1,106 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
-import { env } from "cloudflare:workers";
+import { supabaseBrowser } from "#/lib/supabaseBrowser";
 import z from "zod";
 
 export const Route = createFileRoute("/erp/reset-password")({
   component: ResetPassword,
 });
 
-const ResetInput = z.object({
-  email: z.string().email(),
-  redirectTo: z.string().optional(),
-});
-
-const sendResetEmail = createServerFn()
-  .inputValidator(ResetInput)
-  .handler(async ({ data }) => {
-    const email = data.email.trim().toLowerCase();
-    const redirectTo = data.redirectTo;
-
-    const supabaseUrl =
-      env.SUPABASE_URL ?? process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-    const serviceKey =
-      env.SUPABASE_SERVICE_ROLE ??
-      env.SUPABASE_KEY ??
-      process.env.SUPABASE_SERVICE_ROLE ??
-      process.env.VITE_SUPABASE_SERVICE_ROLE;
-    const anonKey =
-      env.SUPABASE_ANON_KEY ??
-      process.env.SUPABASE_ANON_KEY ??
-      process.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl) {
-      throw new Error("Supabase URL is not configured.");
-    }
-
-    const key = serviceKey ?? anonKey;
-    if (!key) {
-      throw new Error("Supabase credentials are not configured.");
-    }
-
-    const supabase = createClient(supabaseUrl, key);
-
-    // If we have service key, verify existence; otherwise skip check (but still send)
-    if (serviceKey) {
-      const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(email);
-      if (userError || !userData?.user) {
-        throw new Error("Email not found");
-      }
-    }
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-    if (error) throw error;
-
-    // Generic response to avoid enumeration if we only had anon key
-    return { ok: true, checked: Boolean(serviceKey) };
-  });
-
 type Status = "idle" | "loading" | "success" | "error";
+type Step = "request" | "password" | "done";
+
+const EmailSchema = z.object({ email: z.string().email() });
+const PasswordSchema = z.object({
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  confirm: z.string(),
+}).refine((d) => d.password === d.confirm, { message: "Passwords do not match" });
 
 function ResetPassword() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [step, setStep] = useState<Step>("request");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  // Detect recovery link (access_token in hash). If present, set session and move to password step.
+  useEffect(() => {
+    if (!supabaseBrowser) return;
+    const hash = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const access_token = params.get("access_token");
+    const refresh_token = params.get("refresh_token");
+    const type = params.get("type");
+
+    if (type === "recovery" && access_token && refresh_token) {
+      supabaseBrowser.auth
+        .setSession({ access_token, refresh_token })
+        .then(() => setStep("password"))
+        .catch((err) => {
+          setStatus("error");
+          setMessage(err?.message ?? "Could not initialize reset session");
+        });
+    }
+  }, []);
+
+  const canRequest = useMemo(() => EmailSchema.safeParse({ email }).success, [email]);
+
+  async function handleRequest(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!supabaseBrowser) {
+      setMessage("Supabase client not configured.");
+      setStatus("error");
+      return;
+    }
     setStatus("loading");
     setMessage("");
-
     try {
-      const redirectTo = `${window.location.origin}/erp/login`;
-      await sendResetEmail({ data: { email, redirectTo } });
-
+      const parsed = EmailSchema.parse({ email });
+      const redirectTo = `${window.location.origin}/erp/reset-password`;
+      const { error } = await supabaseBrowser.auth.resetPasswordForEmail(parsed.email, {
+        redirectTo,
+      });
+      if (error) throw error;
       setStatus("success");
-      setMessage("Password reset email sent. Please check your inbox.");
+      setMessage("Reset email sent. Check your inbox and follow the link.");
     } catch (err: any) {
       setStatus("error");
       setMessage(err?.message ?? "Unable to send reset email");
     } finally {
-      setStatus((prev) => (prev === "success" ? prev : "idle"));
+      setStatus((prev) => (prev === "success" ? "success" : "idle"));
+    }
+  }
+
+  async function handlePassword(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!supabaseBrowser) {
+      setMessage("Supabase client not configured.");
+      setStatus("error");
+      return;
+    }
+    const parsed = PasswordSchema.safeParse({ password, confirm });
+    if (!parsed.success) {
+      setStatus("error");
+      setMessage(parsed.error.errors[0]?.message ?? "Invalid password");
+      return;
+    }
+
+    setStatus("loading");
+    setMessage("");
+    try {
+      const { error } = await supabaseBrowser.auth.updateUser({ password: parsed.data.password });
+      if (error) throw error;
+      setStatus("success");
+      setStep("done");
+      setMessage("Password updated. Redirecting to login...");
+      setTimeout(() => navigate({ to: "/erp/login" }), 1500);
+    } catch (err: any) {
+      setStatus("error");
+      setMessage(err?.message ?? "Unable to update password");
+    } finally {
+      setStatus((prev) => (prev === "success" ? "success" : "idle"));
     }
   }
 
@@ -94,42 +113,106 @@ function ResetPassword() {
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">Reset password</h1>
           <p className="mt-2 text-sm text-slate-400">
-            Enter the email associated with your account and we&apos;ll send a reset link.
+            {step === "request"
+              ? "Enter your email to receive a reset link."
+              : "Enter your new password."}
           </p>
 
-          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-            <label className="flex flex-col gap-2 text-sm text-slate-200">
-              <span className="text-slate-300">Email</span>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-cyan-300/70 focus:ring-4 focus:ring-cyan-400/15"
-                placeholder="you@company.com"
-              />
-            </label>
+          {step === "request" && (
+            <form className="mt-6 space-y-4" onSubmit={handleRequest}>
+              <label className="flex flex-col gap-2 text-sm text-slate-200">
+                <span className="text-slate-300">Email</span>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-cyan-300/70 focus:ring-4 focus:ring-cyan-400/15"
+                  placeholder="you@company.com"
+                />
+              </label>
 
-            {message && (
-              <div
-                className={`rounded-lg border px-3 py-2 text-sm ${
-                  status === "success"
-                    ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-100"
-                    : "border-red-400/40 bg-red-400/10 text-red-100"
-                }`}
+              {message && (
+                <div
+                  className={`rounded-lg border px-3 py-2 text-sm ${
+                    status === "success"
+                      ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-100"
+                      : "border-red-400/40 bg-red-400/10 text-red-100"
+                  }`}
+                >
+                  {message}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={status === "loading" || !canRequest}
+                className="inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/30 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {message}
-              </div>
-            )}
+                {status === "loading" ? "Sending…" : "Send reset link"}
+              </button>
+            </form>
+          )}
 
-            <button
-              type="submit"
-              disabled={status === "loading"}
-              className="inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/30 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {status === "loading" ? "Sending…" : "Send reset link"}
-            </button>
-          </form>
+          {step === "password" && (
+            <form className="mt-6 space-y-4" onSubmit={handlePassword}>
+              <label className="flex flex-col gap-2 text-sm text-slate-200">
+                <span className="text-slate-300">New password</span>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-cyan-300/70 focus:ring-4 focus:ring-cyan-400/15"
+                />
+              </label>
+              <label className="flex flex-col gap-2 text-sm text-slate-200">
+                <span className="text-slate-300">Confirm password</span>
+                <input
+                  type="password"
+                  required
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none transition focus:border-cyan-300/70 focus:ring-4 focus:ring-cyan-400/15"
+                />
+              </label>
+
+              {message && (
+                <div
+                  className={`rounded-lg border px-3 py-2 text-sm ${
+                    status === "success"
+                      ? "border-emerald-400/50 bg-emerald-400/10 text-emerald-100"
+                      : "border-red-400/40 bg-red-400/10 text-red-100"
+                  }`}
+                >
+                  {message}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/30 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {status === "loading" ? "Updating…" : "Update password"}
+              </button>
+            </form>
+          )}
+
+          {step === "done" && (
+            <div className="mt-6 space-y-3 text-sm text-slate-200">
+              <div className="rounded-lg border border-emerald-400/50 bg-emerald-400/10 px-3 py-2 text-emerald-100">
+                Password updated. Redirecting to login...
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate({ to: "/erp/login" })}
+                className="inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/30 transition hover:opacity-95"
+              >
+                Go to login now
+              </button>
+            </div>
+          )}
 
           <div className="mt-4 text-sm text-slate-400">
             Remembered your password?{" "}

@@ -76,10 +76,10 @@ function InvoicePage() {
       rows.map((row) =>
         row.id === id
           ? {
-              ...row,
-              [field]:
-                field === "description" ? value : Math.max(0, Number(value) || 0),
-            }
+            ...row,
+            [field]:
+              field === "description" ? value : Math.max(0, Number(value) || 0),
+          }
           : row,
       ),
     );
@@ -148,6 +148,7 @@ function InvoicePage() {
           </button>
         </div>
 
+
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Invoice Number">
@@ -161,7 +162,7 @@ function InvoicePage() {
               <select
                 value={customer}
                 onChange={(e) => setCustomer(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none"
+                className="w-full rounded-lg border border-white/10 bg-slate-800/90 px-3 py-3 text-sm text-slate-100 outline-none appearance-none"
               >
                 <option value="">Select customer</option>
                 {customers.map((c) => (

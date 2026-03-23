@@ -27,6 +27,38 @@ function AccountsPage() {
     acc.account_description.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleSelect = () => {
+    const trimmedSearch = search.trim().toLowerCase();
+
+    if (!trimmedSearch) {
+      alert("Please enter an account name or click one from the list.");
+      return;
+    }
+
+    const exactMatch = accounts.find(
+      (acc) => acc.account_description.toLowerCase() === trimmedSearch
+    );
+
+    if (exactMatch) {
+      setSelected(exactMatch.account_description);
+      setSearch(exactMatch.account_description);
+      return;
+    }
+
+    if (filteredAccounts.length > 0) {
+      setSelected(filteredAccounts[0].account_description);
+      setSearch(filteredAccounts[0].account_description);
+      return;
+    }
+
+    alert("No matching account found.");
+  };
+
+  const handleListClick = (accountDescription: string) => {
+    setSelected(accountDescription);
+    setSearch(accountDescription);
+  };
+
   return (
     <div
       style={{
@@ -40,21 +72,61 @@ function AccountsPage() {
         View & Search Accounts
       </h1>
 
-      <input
-        type="text"
-        placeholder="Search accounts..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "12px",
-          marginBottom: "20px",
-          fontSize: "16px",
-          border: "1px solid #999",
-          borderRadius: "6px",
-          boxSizing: "border-box",
-        }}
-      />
+      <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+        <input
+          type="text"
+          placeholder="Search accounts..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSelect();
+            }
+          }}
+          style={{
+            flex: 1,
+            padding: "12px",
+            fontSize: "16px",
+            border: "1px solid #999",
+            borderRadius: "6px",
+            boxSizing: "border-box",
+          }}
+        />
+
+        <button
+          type="button"
+          onClick={handleSelect}
+          style={{
+            padding: "12px 18px",
+            fontSize: "16px",
+            fontWeight: "bold",
+            backgroundColor: "#111827",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+        >
+          Select
+        </button>
+      </div>
+
+      {search && filteredAccounts.length > 0 && (
+        <div
+          style={{
+            marginBottom: "20px",
+            padding: "12px 16px",
+            backgroundColor: "#f8fafc",
+            border: "1px solid #cbd5e1",
+            borderRadius: "8px",
+            color: "#334155",
+          }}
+        >
+          Suggested Account:{" "}
+          <strong>{filteredAccounts[0].account_description}</strong>
+        </div>
+      )}
 
       {selected && (
         <div
@@ -77,7 +149,7 @@ function AccountsPage() {
           filteredAccounts.map((acc) => (
             <div
               key={acc.account_id}
-              onClick={() => setSelected(acc.account_description)}
+              onClick={() => handleListClick(acc.account_description)}
               style={{
                 padding: "12px",
                 border: "1px solid #ddd",

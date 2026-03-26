@@ -11,7 +11,11 @@ export async function createPasswordResetToken(authId: string) {
   return await jwt.sign(payload, env.APP_SECRET, { algorithm: "HS256" });
 }
 
-export async function verifyPasswordResetToken(token: string, authId: string) {
+export async function decodePasswordResetToken(token: string) {
   const verified = await jwt.verify(token, env.APP_SECRET);
-  return verified && verified.payload.sub === authId;
+  if (!verified || !verified.payload.sub) {
+    throw new Error("Invalid or expired token");
+  }
+
+  return verified.payload.sub;
 }

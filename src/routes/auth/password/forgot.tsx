@@ -2,11 +2,13 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { eq } from "drizzle-orm";
 import * as v from "valibot";
 
 import { redirectIfSignedIn } from "#/lib/auth";
 import { AuthProvider, DatabaseProvider } from "#/lib/provider";
 import { createPasswordResetToken } from "#/lib/server/auth";
+import { t } from "#/lib/server/database";
 
 export const Route = createFileRoute("/auth/password/forgot")({
   component: ForgotPasswordPage,
@@ -23,7 +25,19 @@ const forgotPasswordFn = createServerFn()
   .middleware([DatabaseProvider, AuthProvider])
   .inputValidator(ForgotPasswordSchema)
   .handler(async ({ context, data }) => {
-    const token = await createPasswordResetToken(data.email);
+    const user = await context.db
+      .select()
+      .from(t.users)
+      .where(eq(t.users.email, data.email))
+      .limit(1)
+      .then((rows) => rows[0]);
+
+    if (!user) {
+      return;
+    }
+
+    const token = await createPasswordResetToken(user.auth_id);
+
     // TODO: send email with token link
     // await context.auth.resetPasswordForEmail(data.email, {
     //   redirectTo: "",
@@ -31,7 +45,7 @@ const forgotPasswordFn = createServerFn()
   });
 
 function ForgotPasswordPage() {
-  const forgotPasswordMut = useMutation({
+  const mutation = useMutation({
     mutationFn: forgotPasswordFn,
   });
 
@@ -44,7 +58,7 @@ function ForgotPasswordPage() {
       onChange: ForgotPasswordSchema,
     },
     onSubmit: async ({ value }) => {
-      await forgotPasswordMut.mutateAsync({ data: value });
+      await mutation.mutateAsync({ data: value });
     },
   });
 
@@ -93,6 +107,14 @@ function ForgotPasswordPage() {
               )}
             />
 
+            {mutation.error && <p className="text-sm text-red-600">{mutation.error.message}</p>}
+
+            {mutation.isSuccess && (
+              <p className="text-sm text-green-600">
+                A password reset link has been sent if an account with this email exists.
+              </p>
+            )}
+
             <form.Subscribe
               selector={(state) => [state.canSubmit, state.isSubmitting]}
               children={([canSubmit, isSubmitting]) => (
@@ -101,7 +123,6 @@ function ForgotPasswordPage() {
                   disabled={!canSubmit || isSubmitting}
                   className="inline-flex w-full items-center justify-center rounded-lg bg-linear-to-r from-cyan-400 to-blue-500 px-4 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-cyan-500/30 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {JSON.stringify({ canSubmit, isSubmitting })}
                   {isSubmitting ? "Sending..." : "Send Reset Link"}
                 </button>
               )}
@@ -110,7 +131,7 @@ function ForgotPasswordPage() {
 
           <div className="mt-4 text-sm text-slate-400">
             Remembered your password?{" "}
-            <Link to="/auth/login" className="text-link">
+            <Link to="/auth/login" className="text-slate-200 hover:text-slate-100 hover:underline">
               Back to login
             </Link>
           </div>

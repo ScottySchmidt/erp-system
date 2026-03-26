@@ -1,21 +1,32 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as v from "valibot";
 
 import { redirectIfSignedIn } from "#/lib/auth";
 import { AuthProvider, DatabaseProvider } from "#/lib/provider";
+import { decodePasswordResetToken } from "#/lib/server/auth";
+
+const RouteSearchSchema = v.object({
+  token: v.string(),
+});
 
 export const Route = createFileRoute("/auth/password/reset")({
   component: ResetPasswordPage,
-  beforeLoad: async ({ context }) => {
+  validateSearch: RouteSearchSchema,
+  beforeLoad: async ({ context, search }) => {
+    if (!search.token) {
+      throw redirect({ to: "/auth/password/forgot" });
+    }
+
     await redirectIfSignedIn(context);
   },
 });
 
 const ResetPasswordSchema = v.pipe(
   v.object({
+    token: v.string(),
     password: v.pipe(
       v.string(),
       v.minLength(8, "Your password is too short (minimum 8 characters)."),
@@ -40,12 +51,17 @@ const resetPasswordFn = createServerFn()
   .middleware([DatabaseProvider, AuthProvider])
   .inputValidator(ResetPasswordSchema)
   .handler(async ({ context, data }) => {
-    // context.auth.admin.updateUserById
-    console.log("Resetting password with data:", data);
+    const authId = await decodePasswordResetToken(data.token);
+
+    context.auth.admin.updateUserById(authId, {
+      password: data.password,
+    });
   });
 
 function ResetPasswordPage() {
-  const resetPasswordMut = useMutation({
+  const search = Route.useSearch();
+
+  const mutation = useMutation({
     mutationFn: resetPasswordFn,
   });
 
@@ -59,7 +75,12 @@ function ResetPasswordPage() {
       onChange: ResetPasswordSchema,
     },
     onSubmit: async ({ value }) => {
-      await resetPasswordMut.mutateAsync({ data: value });
+      await mutation.mutateAsync({
+        data: {
+          token: search.token,
+          ...value,
+        },
+      });
     },
   });
 

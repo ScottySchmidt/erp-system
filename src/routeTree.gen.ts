@@ -9,7 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SupabaseTestRouteImport } from './routes/supabase-test'
+import { Route as TestRouteImport } from './routes/test'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InvoiceNewRouteImport } from './routes/invoice/new'
 import { Route as InvoiceIdRouteImport } from './routes/invoice/$id'
@@ -23,9 +23,9 @@ import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthPasswordResetRouteImport } from './routes/auth/password/reset'
 import { Route as AuthPasswordForgotRouteImport } from './routes/auth/password/forgot'
 
-const SupabaseTestRoute = SupabaseTestRouteImport.update({
-  id: '/supabase-test',
-  path: '/supabase-test',
+const TestRoute = TestRouteImport.update({
+  id: '/test',
+  path: '/test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -91,7 +91,7 @@ const AuthPasswordForgotRoute = AuthPasswordForgotRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/supabase-test': typeof SupabaseTestRoute
+  '/test': typeof TestRoute
   '/auth/login': typeof AuthLoginRoute
   '/erp/dashboard': typeof ErpDashboardRoute
   '/erp/invoice': typeof ErpInvoiceRoute
@@ -106,7 +106,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/supabase-test': typeof SupabaseTestRoute
+  '/test': typeof TestRoute
   '/auth/login': typeof AuthLoginRoute
   '/erp/dashboard': typeof ErpDashboardRoute
   '/erp/invoice': typeof ErpInvoiceRoute
@@ -122,7 +122,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/supabase-test': typeof SupabaseTestRoute
+  '/test': typeof TestRoute
   '/auth/login': typeof AuthLoginRoute
   '/erp/dashboard': typeof ErpDashboardRoute
   '/erp/invoice': typeof ErpInvoiceRoute
@@ -139,7 +139,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/supabase-test'
+    | '/test'
     | '/auth/login'
     | '/erp/dashboard'
     | '/erp/invoice'
@@ -154,7 +154,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/supabase-test'
+    | '/test'
     | '/auth/login'
     | '/erp/dashboard'
     | '/erp/invoice'
@@ -169,7 +169,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/supabase-test'
+    | '/test'
     | '/auth/login'
     | '/erp/dashboard'
     | '/erp/invoice'
@@ -185,7 +185,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SupabaseTestRoute: typeof SupabaseTestRoute
+  TestRoute: typeof TestRoute
   AuthLoginRoute: typeof AuthLoginRoute
   ErpDashboardRoute: typeof ErpDashboardRoute
   ErpInvoiceRoute: typeof ErpInvoiceRoute
@@ -201,11 +201,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/supabase-test': {
-      id: '/supabase-test'
-      path: '/supabase-test'
-      fullPath: '/supabase-test'
-      preLoaderRoute: typeof SupabaseTestRouteImport
+    '/test': {
+      id: '/test'
+      path: '/test'
+      fullPath: '/test'
+      preLoaderRoute: typeof TestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -297,7 +297,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SupabaseTestRoute: SupabaseTestRoute,
+  TestRoute: TestRoute,
   AuthLoginRoute: AuthLoginRoute,
   ErpDashboardRoute: ErpDashboardRoute,
   ErpInvoiceRoute: ErpInvoiceRoute,

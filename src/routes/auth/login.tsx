@@ -27,10 +27,12 @@ const loginFn = createServerFn()
   .middleware([DatabaseProvider, AuthProvider])
   .inputValidator(LoginSchema)
   .handler(async ({ data, context }) => {
+    console.log("Login data:", data);
     const result = await context.auth.signInWithPassword({
       email: data.email,
       password: data.password,
     });
+    console.log("Login result:", result);
 
     if (!result.data.user) {
       throw new Error(result.error?.message ?? "Login failed");
@@ -42,8 +44,6 @@ const loginFn = createServerFn()
       .where(eq(t.users.auth_id, result.data.user.id))
       .limit(1)
       .then((rows) => rows[0]);
-
-    await context.db.insert(t.sessions).values({ user_id: user.user_id });
 
     return {
       email: user.email,

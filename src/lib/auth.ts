@@ -44,7 +44,6 @@ export async function redirectIfSignedOut(context: RouterContext) {
 
 export async function redirectIfSignedIn(context: RouterContext) {
   const data = await fetchAuthUserQuery(context.queryClient);
-  console.log("redirectIfSignedIn", data.user);
   if (data.user) {
     throw redirect({ to: "/" });
   }

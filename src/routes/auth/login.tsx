@@ -57,7 +57,6 @@ function LoginPage() {
   const mutation = useMutation({
     mutationFn: loginFn,
     onSuccess: async (user) => {
-      console.log("Logged in as user:", user);
       await router.invalidate();
       await router.navigate({ to: "/" });
     },

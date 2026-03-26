@@ -6,45 +6,45 @@ import type { RouterContext } from "#/types";
 
 import { AuthProvider } from "./provider";
 
-const getAuthUserFn = createServerFn()
+const getAuthInfoFn = createServerFn()
   .middleware([AuthProvider])
   .handler(async ({ context }) => {
     const response = await context.auth.getUser();
-    return response.data;
+    return response.data.user;
   });
 
-const AuthUserQueryKey = ["#!/auth"];
+const AuthInfoQueryKey = ["#!/auth/identity"] as const;
 
-export function useAuthUserQuery() {
+export function useAuthInfoQuery() {
   return useQuery({
-    queryKey: AuthUserQueryKey,
-    queryFn: getAuthUserFn,
+    queryKey: AuthInfoQueryKey,
+    queryFn: getAuthInfoFn,
   });
 }
 
-export function fetchAuthUserQuery(client: QueryClient) {
+export function fetchAuthInfoQuery(client: QueryClient) {
   return client.fetchQuery({
-    queryKey: AuthUserQueryKey,
-    queryFn: getAuthUserFn,
+    queryKey: AuthInfoQueryKey,
+    queryFn: getAuthInfoFn,
   });
 }
 
-export function invalidateAuthUserQuery(client: QueryClient) {
+export function invalidateAuthInfoQuery(client: QueryClient) {
   return client.invalidateQueries({
-    queryKey: AuthUserQueryKey,
+    queryKey: AuthInfoQueryKey,
   });
 }
 
 export async function redirectIfSignedOut(context: RouterContext) {
-  const data = await fetchAuthUserQuery(context.queryClient);
-  if (!data.user) {
+  const info = await fetchAuthInfoQuery(context.queryClient);
+  if (!info) {
     throw redirect({ to: "/auth/login" });
   }
 }
 
 export async function redirectIfSignedIn(context: RouterContext) {
-  const data = await fetchAuthUserQuery(context.queryClient);
-  if (data.user) {
+  const info = await fetchAuthInfoQuery(context.queryClient);
+  if (info) {
     throw redirect({ to: "/" });
   }
 }

@@ -1,9 +1,9 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "drizzle-orm";
 
-import { useAuthUserQuery } from "#/lib/auth";
+import { useAuthInfoQuery } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
 
 export const Route = createFileRoute("/test")({
@@ -24,7 +24,7 @@ function TestPage() {
     queryFn: fetchVersionFn,
   });
 
-  const authUser = useAuthUserQuery();
+  const authInfo = useAuthInfoQuery();
 
   return (
     <main className="page-wrap px-4 pt-14 pb-8">
@@ -35,7 +35,7 @@ function TestPage() {
           <button
             onClick={() => {
               dbVersion.refetch();
-              authUser.refetch();
+              authInfo.refetch();
             }}
             className="cursor-pointer rounded-full border border-cyan-700/30 bg-cyan-50 px-5 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5"
           >
@@ -61,10 +61,10 @@ function TestPage() {
 
         <div className="rounded-xl border border-gray-300 p-4">
           <h2 className="text-xl font-semibold">Auth</h2>
-          <p className="mt-2">{authUser.error?.message}</p>
+          <p className="mt-2">{authInfo.error?.message}</p>
 
           <pre className="mt-4 overflow-auto rounded bg-gray-100 p-3 text-sm whitespace-pre-wrap">
-            {authUser.isFetching ? "Loading..." : JSON.stringify(authUser.data, null, 2)}
+            {authInfo.isFetching ? "Loading..." : JSON.stringify(authInfo.data, null, 2)}
           </pre>
         </div>
       </section>

@@ -54,7 +54,7 @@ const loginFn = createServerFn()
 function LoginPage() {
   const router = useRouter();
 
-  const loginMut = useMutation({
+  const mutation = useMutation({
     mutationFn: loginFn,
     onSuccess: async (user) => {
       console.log("Logged in as user:", user);
@@ -73,7 +73,7 @@ function LoginPage() {
       onChange: LoginSchema,
     },
     onSubmit: async ({ value }) => {
-      await loginMut.mutateAsync({ data: value });
+      await mutation.mutateAsync({ data: value });
     },
   });
 
@@ -128,7 +128,7 @@ function LoginPage() {
           )}
         />
 
-        {loginMut.error && <div className="text-sm text-red-600">{loginMut.error.message}</div>}
+        {mutation.error && <div className="text-sm text-red-600">{mutation.error.message}</div>}
 
         <form.Subscribe
           selector={(state) => [state.canSubmit, state.isSubmitting]}

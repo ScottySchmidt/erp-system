@@ -60,7 +60,7 @@ function ShowInvoice() {
   const router = useRouter();
   const invoice = Route.useLoaderData();
 
-  const updateInvoiceMut = useMutation({
+  const mutation = useMutation({
     mutationFn: updateInvoiceFn,
     onSuccess: async () => {
       await router.invalidate();
@@ -73,10 +73,10 @@ function ShowInvoice() {
 
       <InvoiceForm
         submitText="Update Invoice"
-        errorText={updateInvoiceMut.error?.message}
+        errorText={mutation.error?.message}
         onSubmit={async (data) => {
           const id = invoice.invoice_id;
-          await updateInvoiceMut.mutateAsync({
+          await mutation.mutateAsync({
             data: { id, value: data },
           });
         }}

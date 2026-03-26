@@ -33,7 +33,7 @@ const createInvoice = createServerFn()
 function NewInvoice() {
   const router = useRouter();
 
-  const createInvoiceMut = useMutation({
+  const mutation = useMutation({
     mutationFn: createInvoice,
     onSuccess: async (data) => {
       await router.invalidate();
@@ -50,7 +50,7 @@ function NewInvoice() {
       <InvoiceForm
         submitText="Create Invoice"
         onSubmit={async (data) => {
-          await createInvoiceMut.mutateAsync({ data });
+          await mutation.mutateAsync({ data });
         }}
         defaultValues={{
           user_id: "",

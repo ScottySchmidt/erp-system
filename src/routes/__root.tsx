@@ -29,6 +29,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     ],
   }),
   shellComponent: RootDocument,
+  notFoundComponent: NotFoundPage,
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -54,5 +55,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
+  );
+}
+
+function NotFoundPage() {
+  return (
+    <p className="mx-auto my-8 max-w-lg rounded-lg border border-gray-300 p-6 text-center text-xl shadow">
+      404 - Not Found
+    </p>
   );
 }

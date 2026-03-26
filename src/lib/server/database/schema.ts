@@ -62,9 +62,3 @@ export const users = pgTable("users", {
   email: text().notNull(),
   full_name: text().notNull(),
 });
-
-export const sessions = pgTable("sessions", {
-  session_id: uuid().primaryKey().defaultRandom(),
-  user_id: bigint({ mode: "number" }).notNull(),
-  created_at: timestamp({ withTimezone: true, mode: "string" }).defaultNow().notNull(),
-});

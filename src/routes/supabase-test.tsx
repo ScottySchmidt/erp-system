@@ -1,42 +1,24 @@
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { desc } from "drizzle-orm";
-import { useState } from "react";
+import { sql } from "drizzle-orm";
 
-import { t } from "#/lib/database";
 import { DatabaseProvider } from "#/lib/middleware";
 
 export const Route = createFileRoute("/supabase-test")({
   component: SupabaseTestPage,
 });
 
-export const fetchRows = createServerFn()
+export const fetchVersionFn = createServerFn()
   .middleware([DatabaseProvider])
   .handler(async ({ context }) => {
-    return await context.db.select().from(t.invoices).orderBy(desc(t.invoices.invoice_id)).limit(5);
+    return await context.db.execute<{ version: string }>(sql`select version()`);
   });
 
 function SupabaseTestPage() {
-  const [status, setStatus] = useState("Not tested yet");
-  const [details, setDetails] = useState("");
-  const [rows, setRows] = useState<any[]>([]);
-
-  const testConnection = async () => {
-    setStatus("Testing database...");
-    setDetails("");
-    setRows([]);
-
-    try {
-      const data = await fetchRows();
-
-      setStatus("Supabase database connected");
-      setDetails(`Returned ${data.length} row(s)`);
-      setRows(data ?? []);
-    } catch (error: any) {
-      setStatus("Connection failed");
-      setDetails(error.message ?? String(error));
-    }
-  };
+  const fetchVersionMut = useMutation({
+    mutationFn: fetchVersionFn,
+  });
 
   return (
     <main className="page-wrap px-4 pt-14 pb-8">
@@ -46,7 +28,7 @@ function SupabaseTestPage() {
 
         <div className="mb-6 flex gap-3">
           <button
-            onClick={testConnection}
+            onClick={() => fetchVersionMut.mutate({})}
             className="rounded-full border border-[rgba(50,143,151,0.3)] bg-[rgba(79,184,178,0.14)] px-5 py-2.5 text-sm font-semibold text-(--lagoon-deep) transition hover:-translate-y-0.5"
           >
             Run Database Test
@@ -62,12 +44,10 @@ function SupabaseTestPage() {
 
         <div className="rounded-xl border p-4">
           <h2 className="text-xl font-semibold">Status</h2>
-          <p className="mt-2">{status}</p>
+          <p className="mt-2">{fetchVersionMut.error?.message}</p>
+
           <pre className="mt-4 overflow-auto rounded bg-gray-100 p-3 text-sm whitespace-pre-wrap">
-            {details}
-          </pre>
-          <pre className="mt-4 overflow-auto rounded bg-gray-100 p-3 text-sm whitespace-pre-wrap">
-            {JSON.stringify(rows, null, 2)}
+            {fetchVersionMut.isPending ? "Loading..." : fetchVersionMut.data?.[0]?.version}
           </pre>
         </div>
       </section>

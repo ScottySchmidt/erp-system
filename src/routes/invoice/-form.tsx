@@ -1,6 +1,4 @@
 import { useForm } from "@tanstack/react-form";
-import { useState } from "react";
-import { twc } from "react-twc";
 import * as v from "valibot";
 
 import { Input } from "#/components/form/Input";
@@ -25,12 +23,12 @@ export const FormSchema = v.object({
 
 export interface InvoiceFormProps {
   submitText: string;
+  errorText?: string;
   onSubmit: (data: v.InferInput<typeof DataSchema>) => Promise<void>;
   defaultValues: v.InferInput<typeof FormSchema>;
 }
 
 export function InvoiceForm(props: InvoiceFormProps) {
-  const [error, setError] = useState("");
   const form = useForm({
     defaultValues: props.defaultValues,
     validators: {
@@ -38,14 +36,8 @@ export function InvoiceForm(props: InvoiceFormProps) {
       onChange: FormSchema,
     },
     onSubmit: async ({ value }) => {
-      setError("");
-
-      try {
-        const data = v.parse(FormSchema, value);
-        await props.onSubmit(data);
-      } catch (error: any) {
-        setError(error.message ?? String(error));
-      }
+      const data = v.parse(FormSchema, value);
+      await props.onSubmit(data);
     },
   });
 
@@ -159,7 +151,7 @@ export function InvoiceForm(props: InvoiceFormProps) {
         )}
       />
 
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {props.errorText && <div className="text-sm text-red-600">{props.errorText}</div>}
 
       <form.Subscribe
         selector={(state) => [state.canSubmit, state.isSubmitting]}

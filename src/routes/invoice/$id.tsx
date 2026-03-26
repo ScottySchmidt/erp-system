@@ -1,4 +1,5 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
+import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { valibotValidator } from "@tanstack/valibot-adapter";
 import { eq } from "drizzle-orm";
@@ -25,12 +26,12 @@ const UpdateInvoiceSchema = v.object({
 });
 
 export const Route = createFileRoute("/invoice/$id")({
-  loader: ({ params }) => fetchInvoice({ data: params }),
+  loader: ({ params }) => fetchInvoiceFn({ data: params }),
   component: ShowInvoice,
   params: valibotValidator(RoutePathSchema),
 });
 
-const fetchInvoice = createServerFn()
+const fetchInvoiceFn = createServerFn()
   .middleware([DatabaseProvider])
   .inputValidator(FetchInvoiceSchema)
   .handler(async ({ data, context }) => {
@@ -48,7 +49,7 @@ const fetchInvoice = createServerFn()
     return invoice;
   });
 
-const updateInvoice = createServerFn()
+const updateInvoiceFn = createServerFn()
   .middleware([DatabaseProvider])
   .inputValidator(UpdateInvoiceSchema)
   .handler(async ({ data, context }) => {
@@ -56,16 +57,26 @@ const updateInvoice = createServerFn()
   });
 
 function ShowInvoice() {
+  const router = useRouter();
   const invoice = Route.useLoaderData();
+
+  const updateInvoiceMut = useMutation({
+    mutationFn: updateInvoiceFn,
+    onSuccess: () => {
+      router.invalidate();
+    },
+  });
 
   return (
     <div className="mx-auto my-8 max-w-lg rounded-lg border border-gray-300 p-6 shadow">
       <h2 className="mb-4 text-lg font-semibold text-gray-900">Edit Invoice</h2>
+
       <InvoiceForm
         submitText="Update Invoice"
+        errorText={updateInvoiceMut.error?.message}
         onSubmit={async (data) => {
           const id = invoice.invoice_id;
-          await updateInvoice({
+          await updateInvoiceMut.mutateAsync({
             data: { id, value: data },
           });
         }}

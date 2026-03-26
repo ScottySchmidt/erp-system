@@ -1,17 +1,21 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
 
 import { Input } from "#/components/form/Input";
 import { Label } from "#/components/form/Label";
-import { t } from "#/lib/database";
-import { AuthProvider, DatabaseProvider } from "#/lib/middleware";
+import { redirectIfSignedIn } from "#/lib/auth";
+import { AuthProvider, DatabaseProvider } from "#/lib/provider";
+import { t } from "#/lib/server/database";
 
 export const Route = createFileRoute("/auth/login")({
   component: LoginPage,
+  beforeLoad: async ({ context }) => {
+    await redirectIfSignedIn(context);
+  },
 });
 
 const LoginSchema = v.object({
@@ -68,8 +72,8 @@ function LoginPage() {
       onMount: LoginSchema,
       onChange: LoginSchema,
     },
-    onSubmit: ({ value }) => {
-      loginMut.mutate({ data: value });
+    onSubmit: async ({ value }) => {
+      await loginMut.mutateAsync({ data: value });
     },
   });
 
@@ -138,6 +142,12 @@ function LoginPage() {
             </button>
           )}
         />
+
+        <p>
+          <Link className="text-link" to="/auth/password/forgot">
+            Forgot your password?
+          </Link>
+        </p>
       </form>
     </div>
   );

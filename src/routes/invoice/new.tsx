@@ -2,8 +2,8 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 
-import { t } from "#/lib/database";
-import { DatabaseProvider } from "#/lib/middleware";
+import { DatabaseProvider } from "#/lib/provider";
+import { t } from "#/lib/server/database";
 import { formatDate } from "#/lib/utils";
 
 import { DataSchema, InvoiceForm } from "./-form";

@@ -15,6 +15,7 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.100.0",
     "@tanstack/react-devtools": "^0.7.0",
     "@tanstack/react-form": "^1.28.5",
@@ -25,6 +26,7 @@
     "@tanstack/react-start": "^1.132.0",
     "@tanstack/router-plugin": "^1.132.0",
     "@tanstack/valibot-adapter": "^1.166.9",
+    "@tsndr/cloudflare-worker-jwt": "^3.2.1",
     "drizzle-orm": "^0.45.1",
     "lucide-react": "^0.545.0",
     "postgres": "^3.4.8",

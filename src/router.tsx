@@ -5,9 +5,12 @@ import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query
 import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
+  const queryClient = new QueryClient();
+
   const router = createTanStackRouter({
     routeTree,
 
+    context: { queryClient },
     scrollRestoration: true,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
@@ -15,7 +18,7 @@ export function getRouter() {
 
   setupRouterSsrQueryIntegration({
     router,
-    queryClient: new QueryClient(),
+    queryClient,
   });
 
   return router;

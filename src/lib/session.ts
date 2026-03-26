@@ -1,17 +1,24 @@
-import { useSession } from "@tanstack/react-start/server";
+import { createServerFn } from "@tanstack/react-start";
 
-type AppSessionData = {
-  auth_session_id?: string;
-};
+import { getAppSession } from "#/lib/server/session";
+import type { RouterContext } from "#/types";
 
-export function useAppSession() {
-  return useSession<AppSessionData>({
-    name: "app-session",
-    password: process.env.SESSION_SECRET!,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      httpOnly: true,
-    },
+const getAppSessionFn = createServerFn().handler(async () => {
+  const session = await getAppSession();
+  return session.data;
+});
+
+const AppSessionQueryKey = ["#!/app-session"];
+
+export function fetchAppSessionQuery(context: RouterContext) {
+  return context.queryClient.fetchQuery({
+    queryKey: AppSessionQueryKey,
+    queryFn: getAppSessionFn,
+  });
+}
+
+export function invalidateAppSessionQuery(context: RouterContext) {
+  return context.queryClient.invalidateQueries({
+    queryKey: AppSessionQueryKey,
   });
 }

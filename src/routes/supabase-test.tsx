@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "drizzle-orm";
 
-import { DatabaseProvider } from "#/lib/middleware";
+import { DatabaseProvider } from "#/lib/provider";
 
 export const Route = createFileRoute("/supabase-test")({
   component: SupabaseTestPage,

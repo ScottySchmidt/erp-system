@@ -5,8 +5,8 @@ import { valibotValidator } from "@tanstack/valibot-adapter";
 import { eq } from "drizzle-orm";
 import * as v from "valibot";
 
-import { t } from "#/lib/database";
-import { DatabaseProvider } from "#/lib/middleware";
+import { DatabaseProvider } from "#/lib/provider";
+import { t } from "#/lib/server/database";
 import { formatDate } from "#/lib/utils";
 import { IntStrSchema } from "#/lib/validation";
 
@@ -62,8 +62,8 @@ function ShowInvoice() {
 
   const updateInvoiceMut = useMutation({
     mutationFn: updateInvoiceFn,
-    onSuccess: () => {
-      router.invalidate();
+    onSuccess: async () => {
+      await router.invalidate();
     },
   });
 

@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
 
-import { Navigation } from "./Navigation";
+import { Navigation } from "./navigation";
 
 export function DashboardLayout(props: PropsWithChildren) {
   return (

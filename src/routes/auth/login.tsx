@@ -1,13 +1,16 @@
+import { Field, Input, Label } from "@headlessui/react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import * as v from "valibot";
 
-import { Input } from "#/components/form/Input";
-import { Label } from "#/components/form/Label";
+import { FieldError } from "#/components/form";
+import { AuthLayout } from "#/components/layout/auth";
 import { redirectIfSignedIn, useAuthInfoQuery } from "#/lib/auth";
 import { SupabaseProvider, DatabaseProvider } from "#/lib/provider";
+
+import { styles } from "./-styles";
 
 export const Route = createFileRoute("/auth/login")({
   component: LoginPage,
@@ -59,41 +62,45 @@ function LoginPage() {
   });
 
   return (
-    <div className="mx-auto my-8 max-w-lg rounded-lg border border-gray-300 p-6 shadow">
-      <h2 className="mb-4 text-lg font-semibold text-gray-900">Login</h2>
+    <AuthLayout>
+      <h1 className={styles.title}>Login to your workspace</h1>
+      <p className={styles.description}>Access the finance dashboard and invoice tools.</p>
 
       <form
+        className="mt-6 flex flex-col gap-4"
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
           form.handleSubmit();
         }}
-        className="flex flex-col gap-4"
       >
         <form.Field
           name="email"
           children={(field) => (
-            <div>
-              <Label htmlFor={field.name}>Email</Label>
+            <Field className={styles.field}>
+              <Label htmlFor={field.name} className={styles.label}>
+                Email
+              </Label>
               <Input
                 id={field.name}
                 name={field.name}
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
+                className={styles.input}
               />
-              {field.state.meta.isDirty && !field.state.meta.isValid && (
-                <span className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</span>
-              )}
-            </div>
+              <FieldError meta={field.state.meta} className={styles.error} />
+            </Field>
           )}
         />
 
         <form.Field
           name="password"
           children={(field) => (
-            <div>
-              <Label htmlFor={field.name}>Password</Label>
+            <Field className={styles.field}>
+              <Label htmlFor={field.name} className={styles.label}>
+                Password
+              </Label>
               <Input
                 id={field.name}
                 name={field.name}
@@ -101,35 +108,33 @@ function LoginPage() {
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
+                className={styles.input}
               />
-              {field.state.meta.isDirty && !field.state.meta.isValid && (
-                <span className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</span>
-              )}
-            </div>
+              <FieldError meta={field.state.meta} className={styles.error} />
+            </Field>
           )}
         />
 
-        {mutation.error && <div className="text-sm text-red-600">{mutation.error.message}</div>}
+        {mutation.error && <p className={styles.error}>{mutation.error.message}</p>}
 
         <form.Subscribe
           selector={(state) => [state.canSubmit, state.isSubmitting]}
           children={([canSubmit, isSubmitting]) => (
-            <button
-              type="submit"
-              disabled={!canSubmit || isSubmitting}
-              className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
-            >
+            <button type="submit" disabled={!canSubmit || isSubmitting} className={styles.submit}>
               {isSubmitting ? "Loading..." : "Login"}
             </button>
           )}
         />
-
-        <p>
-          <Link className="text-link" to="/auth/password/forgot">
-            Forgot your password?
-          </Link>
-        </p>
       </form>
-    </div>
+
+      <p className="mt-4 flex justify-between">
+        <Link className={styles.link} to="/auth/password/forgot">
+          Register
+        </Link>
+        <Link className={styles.link} to="/auth/password/forgot">
+          Forgot your password?
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }

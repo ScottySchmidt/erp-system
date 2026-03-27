@@ -5,7 +5,7 @@ import { valibotValidator } from "@tanstack/valibot-adapter";
 import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 
-import { Authenticate, MustAuthenticate } from "#/lib/auth";
+import { MustAuthenticate } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
 import { formatDate } from "#/lib/utils";

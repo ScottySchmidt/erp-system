@@ -3,7 +3,7 @@ import { HeadContent, Scripts, createRootRouteWithContext } from "@tanstack/reac
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import type { PropsWithChildren } from "react";
 
-import Header from "#/components/layout/Header";
+import Header from "#/components/layout/header";
 import type { RouterContext } from "#/types";
 
 import appCss from "#/styles.css?url";
@@ -13,7 +13,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "TanStack Start Starter" },
+      { title: "ERP Accounting System" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),

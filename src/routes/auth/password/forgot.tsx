@@ -85,12 +85,9 @@ function ForgotPasswordPage() {
           name="email"
           children={(field) => (
             <Field className={styles.field}>
-              <Label htmlFor={field.name} className={styles.label}>
-                Email
-              </Label>
+              <Label className={styles.label}>Email</Label>
               <Input
                 type="email"
-                id={field.name}
                 name={field.name}
                 value={field.state.value}
                 onBlur={field.handleBlur}

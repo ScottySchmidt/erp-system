@@ -78,11 +78,8 @@ function LoginPage() {
           name="email"
           children={(field) => (
             <Field className={styles.field}>
-              <Label htmlFor={field.name} className={styles.label}>
-                Email
-              </Label>
+              <Label className={styles.label}>Email</Label>
               <Input
-                id={field.name}
                 name={field.name}
                 value={field.state.value}
                 onBlur={field.handleBlur}
@@ -98,11 +95,8 @@ function LoginPage() {
           name="password"
           children={(field) => (
             <Field className={styles.field}>
-              <Label htmlFor={field.name} className={styles.label}>
-                Password
-              </Label>
+              <Label className={styles.label}>Password</Label>
               <Input
-                id={field.name}
                 name={field.name}
                 type="password"
                 value={field.state.value}

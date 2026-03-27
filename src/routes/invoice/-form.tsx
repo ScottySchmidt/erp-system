@@ -1,7 +1,8 @@
-import { Input, Label } from "@headlessui/react";
+import { Field, Input, Label } from "@headlessui/react";
 import { useForm } from "@tanstack/react-form";
 import * as v from "valibot";
 
+import { FieldError } from "#/components/form";
 import { IntStrSchema, MoneySchema } from "#/lib/validation";
 
 export const DataSchema = v.object({
@@ -50,29 +51,25 @@ export function InvoiceForm(props: InvoiceFormProps) {
       <form.Field
         name="account_id"
         children={(field) => (
-          <div>
-            <Label htmlFor={field.name}>Account ID</Label>
+          <Field>
+            <Label>Account ID</Label>
             <Input
-              id={field.name}
               name={field.name}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={(e) => field.handleChange(e.target.value)}
             />
-            {!field.state.meta.isValid && (
-              <span className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</span>
-            )}
-          </div>
+            <FieldError meta={field.state.meta} />
+          </Field>
         )}
       />
 
       <form.Field
         name="invoice_date"
         children={(field) => (
-          <div>
-            <Label htmlFor={field.name}>Invoice Date</Label>
+          <Field>
+            <Label>Invoice Date</Label>
             <Input
-              id={field.name}
               name={field.name}
               type="date"
               value={field.state.value}
@@ -80,20 +77,17 @@ export function InvoiceForm(props: InvoiceFormProps) {
               onChange={(e) => field.handleChange(e.target.value)}
               required
             />
-            {!field.state.meta.isValid && (
-              <span className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</span>
-            )}
-          </div>
+            <FieldError meta={field.state.meta} />
+          </Field>
         )}
       />
 
       <form.Field
         name="amount"
         children={(field) => (
-          <div>
-            <Label htmlFor={field.name}>Amount</Label>
+          <Field>
+            <Label>Amount</Label>
             <Input
-              id={field.name}
               name={field.name}
               type="number"
               step="0.01"
@@ -102,30 +96,25 @@ export function InvoiceForm(props: InvoiceFormProps) {
               onChange={(e) => field.handleChange(e.target.value)}
               required
             />
-            {!field.state.meta.isValid && (
-              <span className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</span>
-            )}
-          </div>
+            <FieldError meta={field.state.meta} />
+          </Field>
         )}
       />
 
       <form.Field
         name="vendor_id"
         children={(field) => (
-          <div>
-            <Label htmlFor={field.name}>Vendor ID</Label>
+          <Field>
+            <Label>Vendor ID</Label>
             <Input
-              id={field.name}
               name={field.name}
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={(e) => field.handleChange(e.target.value)}
               required
             />
-            {!field.state.meta.isValid && (
-              <span className="text-sm text-red-600">{field.state.meta.errors[0]?.message}</span>
-            )}
-          </div>
+            <FieldError meta={field.state.meta} />
+          </Field>
         )}
       />
 

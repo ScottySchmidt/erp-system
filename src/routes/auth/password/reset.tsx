@@ -106,12 +106,9 @@ function ResetPasswordPage() {
           name="password"
           children={(field) => (
             <Field className={styles.field}>
-              <Label htmlFor={field.name} className={styles.label}>
-                Password
-              </Label>
+              <Label className={styles.label}>Password</Label>
               <input
                 type="password"
-                id={field.name}
                 name={field.name}
                 value={field.state.value}
                 onBlur={field.handleBlur}
@@ -127,12 +124,9 @@ function ResetPasswordPage() {
           name="confirm"
           children={(field) => (
             <Field className={styles.field}>
-              <Label htmlFor={field.name} className={styles.label}>
-                Confirm Password
-              </Label>
+              <Label className={styles.label}>Confirm Password</Label>
               <Input
                 type="password"
-                id={field.name}
                 name={field.name}
                 value={field.state.value}
                 onBlur={field.handleBlur}

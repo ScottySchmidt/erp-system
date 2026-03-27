@@ -6,8 +6,19 @@ import { DatabaseProvider, SupabaseProvider } from "#/lib/provider";
 import { getOrInitProfile } from "#/lib/server/auth";
 import type { RouterContext } from "#/types";
 
+import { emitStoreValue, useSubscribeStore } from "./store";
+
 const Authenticate = createMiddleware({ type: "function" })
   .middleware([DatabaseProvider, SupabaseProvider])
+  .client(async ({ next }) => {
+    const result = await next();
+
+    // the context sent from the middleware itself is not inferred
+    const { auth } = result.context as any;
+    emitStoreValue(AuthInfoQueryKey, auth);
+
+    return result;
+  })
   .server(async ({ context, next }) => {
     const response = await context.supabase.auth.getUser();
     const identity = response.data.user;
@@ -17,26 +28,33 @@ const Authenticate = createMiddleware({ type: "function" })
       context: {
         auth: { identity, profile },
       },
+      sendContext: {
+        auth: { identity, profile },
+      },
     });
   });
 
-const getAuthStatusFn = createServerFn()
+const getAuthInfoFn = createServerFn()
   .middleware([Authenticate])
   .handler(({ context }) => context.auth);
 
-const AuthStatusQueryKey = ["#!/auth"] as const;
+const AuthInfoQueryKey = ["#!/auth"] as const;
 
-export function useAuthStatusQuery() {
+export function useAuthInfoQuery() {
+  useSubscribeStore(AuthInfoQueryKey);
+
   return useQuery({
-    queryKey: AuthStatusQueryKey,
-    queryFn: getAuthStatusFn,
+    queryKey: AuthInfoQueryKey,
+    queryFn: getAuthInfoFn,
+    staleTime: Infinity,
   });
 }
 
 export async function redirectIfSignedOut(context: RouterContext) {
   const auth = await context.queryClient.fetchQuery({
-    queryKey: AuthStatusQueryKey,
-    queryFn: getAuthStatusFn,
+    queryKey: AuthInfoQueryKey,
+    queryFn: getAuthInfoFn,
+    staleTime: Infinity,
   });
 
   if (!auth.identity) {
@@ -46,8 +64,9 @@ export async function redirectIfSignedOut(context: RouterContext) {
 
 export async function redirectIfSignedIn(context: RouterContext) {
   const auth = await context.queryClient.fetchQuery({
-    queryKey: AuthStatusQueryKey,
-    queryFn: getAuthStatusFn,
+    queryKey: AuthInfoQueryKey,
+    queryFn: getAuthInfoFn,
+    staleTime: Infinity,
   });
 
   if (auth.identity) {

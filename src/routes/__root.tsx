@@ -1,8 +1,9 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { HeadContent, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import type { PropsWithChildren } from "react";
 
-import Header from "#/components/Header";
+import Header from "#/components/layout/Header";
 import type { RouterContext } from "#/types";
 
 import appCss from "#/styles.css?url";
@@ -20,7 +21,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   notFoundComponent: NotFoundPage,
 });
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument(props: PropsWithChildren) {
   return (
     <html lang="en">
       <head>
@@ -28,7 +29,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <Header />
-        {children}
+        {props.children}
         <TanStackDevtools
           config={{
             position: "bottom-right",

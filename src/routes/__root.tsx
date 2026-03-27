@@ -4,6 +4,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import type { PropsWithChildren } from "react";
 
 import Header from "#/components/layout/header";
+import { RouteLoadingOverlay } from "#/components/router";
 import type { RouterContext } from "#/types";
 
 import appCss from "#/styles.css?url";
@@ -28,8 +29,11 @@ function RootDocument(props: PropsWithChildren) {
         <HeadContent />
       </head>
       <body>
+        <RouteLoadingOverlay />
         <Header />
+
         {props.children}
+
         <TanStackDevtools
           config={{
             position: "bottom-right",

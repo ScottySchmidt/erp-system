@@ -1,0 +1,31 @@
+@layer components {
+  .loading {
+    width: 48px;
+    height: 48px;
+    display: inline-block;
+    position: relative;
+  }
+
+  .loading::after,
+  .loading::before {
+    content: "";
+    @apply size-12;
+    @apply border border-white;
+    @apply absolute top-0 left-0;
+    animation: rotation 3s ease infinite;
+  }
+
+  .loading::after {
+    @apply border-cyan-400;
+    animation-delay: 1.5s;
+  }
+
+  @keyframes rotation {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(540deg);
+    }
+  }
+}

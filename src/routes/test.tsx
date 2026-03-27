@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "drizzle-orm";
 
 import { DashboardLayout } from "#/components/layout/DashboardLayout";
-import { useAuthStatusQuery } from "#/lib/auth";
+import { useAuthInfoQuery } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
 
 export const Route = createFileRoute("/test")({
@@ -25,7 +25,7 @@ function TestPage() {
     queryFn: fetchVersionFn,
   });
 
-  const authInfo = useAuthStatusQuery();
+  const authInfo = useAuthInfoQuery();
 
   return (
     <DashboardLayout>

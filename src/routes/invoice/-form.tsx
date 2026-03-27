@@ -1,8 +1,7 @@
+import { Input, Label } from "@headlessui/react";
 import { useForm } from "@tanstack/react-form";
 import * as v from "valibot";
 
-import { Input } from "#/components/form/Input";
-import { Label } from "#/components/form/Label";
 import { IntStrSchema, MoneySchema } from "#/lib/validation";
 
 export const DataSchema = v.object({

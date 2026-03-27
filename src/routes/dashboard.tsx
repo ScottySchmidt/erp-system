@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { DashboardLayout } from "#/components/layout/DashboardLayout";
+import { DashboardLayout } from "#/components/layout/dashboard";
 import { redirectIfSignedOut } from "#/lib/auth";
 
 export const Route = createFileRoute("/dashboard")({

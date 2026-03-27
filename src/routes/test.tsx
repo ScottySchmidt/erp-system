@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { sql } from "drizzle-orm";
 
-import { DashboardLayout } from "#/components/layout/DashboardLayout";
+import { DashboardLayout } from "#/components/layout/dashboard";
 import { useAuthInfoQuery } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
 

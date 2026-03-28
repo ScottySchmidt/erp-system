@@ -16,12 +16,12 @@ const RouteSearchSchema = v.object({
 });
 
 export const Route = createFileRoute("/invoice/")({
+  component: ListInvoicePage,
+  loaderDeps: ({ search }) => v.parse(RouteSearchSchema, search),
   beforeLoad: async ({ context }) => {
     await redirectIfSignedOut(context);
   },
-  loaderDeps: ({ search }) => v.parse(RouteSearchSchema, search),
   loader: ({ deps }) => listInvoiceFn({ data: deps }),
-  component: ListInvoicePage,
 });
 
 const ListInvoiceSchema = v.object({

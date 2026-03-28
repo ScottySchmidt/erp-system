@@ -33,8 +33,8 @@ function UserMenu() {
 
   const logoutMut = useMutation({
     mutationFn: logoutFn,
-    onSuccess() {
-      auth.refetch();
+    async onSuccess() {
+      await auth.refetch();
     },
   });
 

@@ -58,7 +58,7 @@ const resetPasswordFn = createServerFn()
   .handler(async ({ context, data }) => {
     const authId = await decodePasswordResetToken(data.token);
 
-    context.supabase.auth.admin.updateUserById(authId, {
+    await context.supabase.auth.admin.updateUserById(authId, {
       password: data.password,
     });
   });
@@ -99,7 +99,7 @@ function ResetPasswordPage() {
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          form.handleSubmit();
+          void form.handleSubmit();
         }}
       >
         <form.Field
@@ -107,7 +107,7 @@ function ResetPasswordPage() {
           children={(field) => (
             <Field className={styles.field}>
               <Label className={styles.label}>Password</Label>
-              <input
+              <Input
                 type="password"
                 name={field.name}
                 value={field.state.value}

@@ -33,8 +33,8 @@ function TestPage() {
         <div className="flex gap-3">
           <button
             onClick={() => {
-              dbVersion.refetch();
-              authInfo.refetch();
+              void dbVersion.refetch();
+              void authInfo.refetch();
             }}
             className="cursor-pointer rounded-lg border border-cyan-700/30 bg-cyan-950 px-4 py-2 text-sm font-semibold transition hover:-translate-y-0.5"
           >

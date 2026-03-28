@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 
 import { supabaseBrowser } from "#/lib/supabaseBrowser";
 
@@ -19,7 +19,7 @@ function Dashboard() {
   useEffect(() => {
     const user = sessionStorage.getItem("user");
     if (!user) {
-      navigate({ to: "/erp/login" });
+      void navigate({ to: "/auth/login" });
       return;
     }
     void loadData();
@@ -30,10 +30,7 @@ function Dashboard() {
     try {
       if (supabaseBrowser) {
         const [invoiceRes, customerRes] = await Promise.all([
-          supabaseBrowser
-            .from("invoices")
-            .select("*")
-            .order("created_at", { ascending: false }),
+          supabaseBrowser.from("invoices").select("*").order("created_at", { ascending: false }),
           supabaseBrowser.from("customers").select("*"),
         ]);
 
@@ -68,7 +65,7 @@ function Dashboard() {
 
   function handleLogout() {
     sessionStorage.clear();
-    navigate({ to: "/erp/login" });
+    void navigate({ to: "/auth/login" });
   }
 
   function exportData() {
@@ -84,7 +81,7 @@ function Dashboard() {
   const recentInvoices = invoices.slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.08),transparent_25%),radial-gradient(circle_at_80%_0%,rgba(59,130,246,0.12),transparent_30%),linear-gradient(135deg,#0f172a,#0b1224)] text-slate-100 px-4 py-10">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.08),transparent_25%),radial-gradient(circle_at_80%_0%,rgba(59,130,246,0.12),transparent_30%),linear-gradient(135deg,#0f172a,#0b1224)] px-4 py-10 text-slate-100">
       <div className="mx-auto max-w-6xl space-y-4">
         <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
           <div className="flex items-center gap-3">
@@ -135,11 +132,15 @@ function Dashboard() {
             <ul className="mt-3 space-y-2 text-sm text-slate-300">
               <li className="flex items-center justify-between border-b border-white/5 pb-2">
                 <span>Paid</span>
-                <span className="font-semibold">{invoices.filter((i) => i.status === "paid").length}</span>
+                <span className="font-semibold">
+                  {invoices.filter((i) => i.status === "paid").length}
+                </span>
               </li>
               <li className="flex items-center justify-between border-b border-white/5 pb-2">
                 <span>Sent</span>
-                <span className="font-semibold">{invoices.filter((i) => i.status === "sent").length}</span>
+                <span className="font-semibold">
+                  {invoices.filter((i) => i.status === "sent").length}
+                </span>
               </li>
               <li className="flex items-center justify-between">
                 <span>Draft</span>
@@ -187,11 +188,21 @@ function Dashboard() {
             <table className="w-full min-w-[540px] border-collapse text-sm">
               <thead className="text-slate-400">
                 <tr>
-                  <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">Invoice #</th>
-                  <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">Customer</th>
-                  <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">Date</th>
-                  <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">Amount</th>
-                  <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">Status</th>
+                  <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">
+                    Invoice #
+                  </th>
+                  <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">
+                    Customer
+                  </th>
+                  <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">
+                    Date
+                  </th>
+                  <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">
+                    Amount
+                  </th>
+                  <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>

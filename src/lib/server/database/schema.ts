@@ -55,7 +55,7 @@ export const gl_accounts = pgTable("gl_accounts", {
 
 export const users = pgTable("users", {
   user_id: bigint({ mode: "number" }).primaryKey().generatedByDefaultAsIdentity(),
-  auth_id: text().notNull(),
+  auth_id: uuid().notNull(),
   created_at: timestamp({ withTimezone: true, mode: "string" }).defaultNow().notNull(),
   role_id: bigint({ mode: "number" }),
   dept_id: bigint({ mode: "number" }),

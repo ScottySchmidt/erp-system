@@ -28,7 +28,7 @@ export const SupabaseProvider = createMiddleware({ type: "function" }).server(as
         return session.data.auth ?? [];
       },
       setAll: (cookies) => {
-        session.update((prev) => ({
+        void session.update((prev) => ({
           ...prev,
           auth: cookies.map(({ name, value }) => ({ name, value })),
         }));

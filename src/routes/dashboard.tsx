@@ -12,7 +12,7 @@ export const Route = createFileRoute("/dashboard")({
 
 function DashboardPage() {
   return (
-    <DashboardLayout>
+    <DashboardLayout title="Overview">
       {Array.from({ length: 20 }).map((_, i) => (
         <p key={i}>
           Lorem ipsum dolor sit amet consectetur adipisicing elit. Voluptas voluptate, doloremque,

@@ -10,10 +10,10 @@ import { formatDate } from "#/lib/utils";
 import { DataSchema, InvoiceForm } from "./-form";
 
 export const Route = createFileRoute("/invoice/new")({
+  component: NewInvoicePage,
   beforeLoad: async ({ context }) => {
     await redirectIfSignedOut(context);
   },
-  component: NewInvoicePage,
 });
 
 const createInvoice = createServerFn()

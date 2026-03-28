@@ -27,12 +27,12 @@ const UpdateInvoiceSchema = v.object({
 });
 
 export const Route = createFileRoute("/invoice/$id")({
+  component: EditInvoicePage,
+  params: valibotValidator(RoutePathSchema),
   beforeLoad: async ({ context }) => {
     await redirectIfSignedOut(context);
   },
   loader: ({ params }) => fetchInvoiceFn({ data: params }),
-  component: EditInvoicePage,
-  params: valibotValidator(RoutePathSchema),
 });
 
 const fetchInvoiceFn = createServerFn()

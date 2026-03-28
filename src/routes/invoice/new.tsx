@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 
-import { MustAuthenticate } from "#/lib/auth";
+import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
 import { formatDate } from "#/lib/utils";
@@ -10,6 +10,9 @@ import { formatDate } from "#/lib/utils";
 import { DataSchema, InvoiceForm } from "./-form";
 
 export const Route = createFileRoute("/invoice/new")({
+  beforeLoad: async ({ context }) => {
+    await redirectIfSignedOut(context);
+  },
   component: NewInvoicePage,
 });
 

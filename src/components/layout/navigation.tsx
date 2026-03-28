@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import clsx from "clsx";
-import { Activity, Building2, FileText, LayoutDashboard, Users } from "lucide-react";
+import * as Icon from "lucide-react";
 import type { ComponentType } from "react";
 
 import type { FileRouteTypes } from "#/routeTree.gen";
@@ -15,17 +15,17 @@ const userNav: NavigationItem[] = [
   {
     title: "Overview",
     to: "/dashboard",
-    icon: LayoutDashboard,
+    icon: Icon.LayoutDashboard,
   },
   {
     title: "Invoices",
     to: "/invoice",
-    icon: FileText,
+    icon: Icon.FileText,
   },
   {
     title: "Vendors",
     to: "/", // TODO
-    icon: Building2,
+    icon: Icon.Building2,
   },
 ];
 
@@ -33,12 +33,12 @@ const adminNav: NavigationItem[] = [
   {
     title: "Test",
     to: "/test",
-    icon: Activity,
+    icon: Icon.Activity,
   },
   {
     title: "Users",
     to: "/", // TODO
-    icon: Users,
+    icon: Icon.Users,
   },
 ];
 

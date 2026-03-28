@@ -86,6 +86,6 @@ export async function redirectIfSignedIn(context: RouterContext) {
   });
 
   if (auth.identity) {
-    throw redirect({ to: "/" });
+    throw redirect({ to: "/dashboard" });
   }
 }

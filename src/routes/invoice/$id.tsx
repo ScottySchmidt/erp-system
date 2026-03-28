@@ -5,7 +5,7 @@ import { valibotValidator } from "@tanstack/valibot-adapter";
 import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 
-import { MustAuthenticate } from "#/lib/auth";
+import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
 import { formatDate } from "#/lib/utils";
@@ -27,6 +27,9 @@ const UpdateInvoiceSchema = v.object({
 });
 
 export const Route = createFileRoute("/invoice/$id")({
+  beforeLoad: async ({ context }) => {
+    await redirectIfSignedOut(context);
+  },
   loader: ({ params }) => fetchInvoiceFn({ data: params }),
   component: EditInvoicePage,
   params: valibotValidator(RoutePathSchema),

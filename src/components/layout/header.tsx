@@ -3,7 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import clsx from "clsx";
-import { ChevronDown, CircleUserRound, LogOut, Settings, User } from "lucide-react";
+import * as Icon from "lucide-react";
 
 import { useAuthInfoQuery } from "#/lib/auth";
 import { DatabaseProvider, SupabaseProvider } from "#/lib/provider";
@@ -58,8 +58,11 @@ function UserMenu() {
             className="flex items-center gap-2 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 transition-colors hover:bg-gray-700 focus:not-data-focus:outline-none data-focus:outline data-focus:outline-white"
             aria-label="Open user menu"
           >
-            <CircleUserRound size={22} />
-            <ChevronDown size={18} className={clsx("transition-transform", open && "rotate-180")} />
+            <Icon.CircleUserRound size={22} />
+            <Icon.ChevronDown
+              size={18}
+              className={clsx("transition-transform", open && "rotate-180")}
+            />
           </MenuButton>
 
           <MenuItems
@@ -72,7 +75,7 @@ function UserMenu() {
                 to="/dashboard"
                 className="flex items-center gap-2 rounded px-3 py-2 text-sm transition-colors hover:bg-gray-800 data-focus:bg-white/10"
               >
-                <User size={16} />
+                <Icon.User size={16} />
                 <span>Profile</span>
               </Link>
             </MenuItem>
@@ -82,7 +85,7 @@ function UserMenu() {
                 to="/dashboard"
                 className="flex items-center gap-2 rounded px-3 py-2 text-sm transition-colors hover:bg-gray-800 data-focus:bg-white/10"
               >
-                <Settings size={16} />
+                <Icon.Settings size={16} />
                 <span>Settings</span>
               </Link>
             </MenuItem>
@@ -92,7 +95,7 @@ function UserMenu() {
                 onClick={() => logoutMut.mutate({})}
                 className="flex cursor-pointer items-center gap-2 rounded px-3 py-2 text-sm text-red-300 transition-colors hover:bg-red-600/40 data-focus:bg-white/10"
               >
-                <LogOut size={16} />
+                <Icon.LogOut size={16} />
                 <span>Logout</span>
               </a>
             </MenuItem>

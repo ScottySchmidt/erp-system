@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import * as v from "valibot";
 
 import { DashboardLayout } from "#/components/layout/dashboard";
-import { MustAuthenticate } from "#/lib/auth";
+import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
 import { IntStrSchema } from "#/lib/validation";
@@ -16,6 +16,9 @@ const RouteSearchSchema = v.object({
 });
 
 export const Route = createFileRoute("/invoice/")({
+  beforeLoad: async ({ context }) => {
+    await redirectIfSignedOut(context);
+  },
   loaderDeps: ({ search }) => v.parse(RouteSearchSchema, search),
   loader: ({ deps }) => listInvoiceFn({ data: deps }),
   component: ListInvoicePage,

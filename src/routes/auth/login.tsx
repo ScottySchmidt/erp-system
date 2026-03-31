@@ -122,7 +122,7 @@ function LoginPage() {
       </form>
 
       <p className="mt-4 flex justify-between">
-        <Link className={styles.link} to="/auth/password/forgot">
+        <Link className={styles.link} to="/auth/register">
           Register
         </Link>
         <Link className={styles.link} to="/auth/password/forgot">

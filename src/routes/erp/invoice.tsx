@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 
 import { supabaseBrowser } from "#/lib/supabaseBrowser";
 
@@ -30,7 +30,7 @@ function InvoicePage() {
   useEffect(() => {
     const user = sessionStorage.getItem("user");
     if (!user) {
-      navigate({ to: "/erp/login" });
+      void navigate({ to: "/auth/login" });
       return;
     }
 
@@ -50,7 +50,9 @@ function InvoicePage() {
   async function loadCustomers() {
     try {
       if (supabaseBrowser) {
-        const { data, error } = await supabaseBrowser.from("vendor").select("vendor_id, vendor_name");
+        const { data, error } = await supabaseBrowser
+          .from("vendor")
+          .select("vendor_id, vendor_name");
         if (!error && data) {
           setCustomers(data.map((v) => ({ id: String(v.vendor_id), name: v.vendor_name })));
           return;
@@ -77,8 +79,7 @@ function InvoicePage() {
         row.id === id
           ? {
               ...row,
-              [field]:
-                field === "description" ? value : Math.max(0, Number(value) || 0),
+              [field]: field === "description" ? value : Math.max(0, Number(value) || 0),
             }
           : row,
       ),
@@ -132,11 +133,11 @@ function InvoicePage() {
     localStorage.setItem("erp_invoices", JSON.stringify(local));
     localStorage.removeItem("currentLineItems");
 
-    navigate({ to: "/erp/dashboard" });
+    await navigate({ to: "/erp/dashboard" });
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.08),transparent_25%),radial-gradient(circle_at_80%_0%,rgba(59,130,246,0.12),transparent_30%),linear-gradient(135deg,#0f172a,#0b1224)] text-slate-100 px-4 py-10">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.08),transparent_25%),radial-gradient(circle_at_80%_0%,rgba(59,130,246,0.12),transparent_30%),linear-gradient(135deg,#0f172a,#0b1224)] px-4 py-10 text-slate-100">
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold">New Invoice</h1>
@@ -322,4 +323,4 @@ function inNDays(days: number) {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date.toISOString().slice(0, 10);
-}
+};

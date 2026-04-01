@@ -21,6 +21,7 @@ import { Route as ErpInvoiceRouteImport } from './routes/erp/invoice'
 import { Route as ErpDashboardRouteImport } from './routes/erp/dashboard'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as ErpApiSupabaseCheckRouteImport } from './routes/erp/api/supabase-check'
 import { Route as AuthPasswordResetRouteImport } from './routes/auth/password/reset'
 import { Route as AuthPasswordForgotRouteImport } from './routes/auth/password/forgot'
 
@@ -84,6 +85,11 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ErpApiSupabaseCheckRoute = ErpApiSupabaseCheckRouteImport.update({
+  id: '/erp/api/supabase-check',
+  path: '/erp/api/supabase-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthPasswordResetRoute = AuthPasswordResetRouteImport.update({
   id: '/auth/password/reset',
   path: '/auth/password/reset',
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/invoice/': typeof InvoiceIndexRoute
   '/auth/password/forgot': typeof AuthPasswordForgotRoute
   '/auth/password/reset': typeof AuthPasswordResetRoute
+  '/erp/api/supabase-check': typeof ErpApiSupabaseCheckRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/invoice': typeof InvoiceIndexRoute
   '/auth/password/forgot': typeof AuthPasswordForgotRoute
   '/auth/password/reset': typeof AuthPasswordResetRoute
+  '/erp/api/supabase-check': typeof ErpApiSupabaseCheckRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/invoice/': typeof InvoiceIndexRoute
   '/auth/password/forgot': typeof AuthPasswordForgotRoute
   '/auth/password/reset': typeof AuthPasswordResetRoute
+  '/erp/api/supabase-check': typeof ErpApiSupabaseCheckRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/invoice/'
     | '/auth/password/forgot'
     | '/auth/password/reset'
+    | '/erp/api/supabase-check'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/invoice'
     | '/auth/password/forgot'
     | '/auth/password/reset'
+    | '/erp/api/supabase-check'
   id:
     | '__root__'
     | '/'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/invoice/'
     | '/auth/password/forgot'
     | '/auth/password/reset'
+    | '/erp/api/supabase-check'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,6 +222,7 @@ export interface RootRouteChildren {
   InvoiceIndexRoute: typeof InvoiceIndexRoute
   AuthPasswordForgotRoute: typeof AuthPasswordForgotRoute
   AuthPasswordResetRoute: typeof AuthPasswordResetRoute
+  ErpApiSupabaseCheckRoute: typeof ErpApiSupabaseCheckRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -298,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/erp/api/supabase-check': {
+      id: '/erp/api/supabase-check'
+      path: '/erp/api/supabase-check'
+      fullPath: '/erp/api/supabase-check'
+      preLoaderRoute: typeof ErpApiSupabaseCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/password/reset': {
       id: '/auth/password/reset'
       path: '/auth/password/reset'
@@ -330,6 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvoiceIndexRoute: InvoiceIndexRoute,
   AuthPasswordForgotRoute: AuthPasswordForgotRoute,
   AuthPasswordResetRoute: AuthPasswordResetRoute,
+  ErpApiSupabaseCheckRoute: ErpApiSupabaseCheckRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

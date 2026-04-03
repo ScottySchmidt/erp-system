@@ -1,20 +1,16 @@
-import { createServerClient } from "@supabase/ssr";
-import { env } from "cloudflare:workers";
-import { getAppSession } from "#/lib/server/session";
+// src/lib/server/supabase.ts
 
-export async function getSupabaseServerClient() {
-  const session = await getAppSession();
+import { createClient } from "@supabase/supabase-js";
 
-  return createServerClient(env.SUPABASE_URL, env.SUPABASE_KEY, {
-    auth: { throwOnError: true },
-    cookies: {
-      getAll: () => session.data.auth ?? [],
-      setAll: (cookies) => {
-        void session.update((prev) => ({
-          ...prev,
-          auth: cookies.map(({ name, value }) => ({ name, value })),
-        }));
-      },
-    },
-  });
+export function getSupabaseServerClient(env: {
+  SUPABASE_URL: string;
+  SUPABASE_ANON_KEY: string;
+}) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+    throw new Error(
+      "Missing Supabase environment variables (SUPABASE_URL / SUPABASE_ANON_KEY)"
+    );
+  }
+
+  return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 }

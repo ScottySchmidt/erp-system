@@ -1,16 +1,19 @@
-// src/lib/server/supabase.ts
+import { createServerClient } from "@supabase/ssr";
+import { env } from "cloudflare:workers";
 
-import { createClient } from "@supabase/supabase-js";
+export function getSupabaseServerClient() {
+  const supabaseUrl = env?.SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const supabaseKey =
+    env?.SUPABASE_KEY ?? process.env.SUPABASE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export function getSupabaseServerClient(env: {
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
-}) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
-    throw new Error(
-      "Missing Supabase environment variables (SUPABASE_URL / SUPABASE_ANON_KEY)"
-    );
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_KEY environment variables");
   }
 
-  return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+  return createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll: () => [],
+      setAll: () => {},
+    },
+  });
 }

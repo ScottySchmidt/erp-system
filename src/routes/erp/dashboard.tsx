@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
+import { DashboardLayout } from "#/components/layout/dashboard";
 import { supabaseBrowser } from "#/lib/supabaseBrowser";
 
 export const Route = createFileRoute("/erp/dashboard")({
@@ -15,6 +16,8 @@ function Dashboard() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllInvoices, setShowAllInvoices] = useState(false);
+  const [updatingInvoiceId, setUpdatingInvoiceId] = useState<string | number | null>(null);
 
   useEffect(() => {
     const user = sessionStorage.getItem("user");
@@ -58,10 +61,45 @@ function Dashboard() {
       (sum, inv) => sum + Number(inv.total ?? inv.amount ?? inv.total_amount ?? 0),
       0,
     );
-    const paidInvoices = invoices.filter((inv) => inv.status === "paid").length;
+    const paidInvoices = invoices.filter((inv) => (inv.status ?? "draft") === "paid").length;
     const conversionRate = totalInvoices ? Math.round((paidInvoices / totalInvoices) * 100) : 0;
     return { totalInvoices, totalRevenue, paidInvoices, conversionRate };
   }, [invoices]);
+
+  async function updateInvoiceStatus(invoice: Invoice, newStatus: string) {
+    const invoiceId = invoice.id ?? invoice.invoice_id ?? invoice.invoice_number;
+    if (!invoiceId) return;
+
+    setUpdatingInvoiceId(invoiceId);
+    try {
+      if (supabaseBrowser && invoice.id) {
+        const { error } = await supabaseBrowser
+          .from("invoices")
+          .update({ status: newStatus })
+          .eq("id", invoice.id);
+        if (error) throw error;
+      } else {
+        const stored: Invoice[] = JSON.parse(localStorage.getItem("erp_invoices") ?? "[]");
+        const updated = stored.map((inv) => {
+          const curr = inv.id ?? inv.invoice_id ?? inv.invoice_number;
+          return curr === invoiceId ? { ...inv, status: newStatus } : inv;
+        });
+        localStorage.setItem("erp_invoices", JSON.stringify(updated));
+      }
+
+      setInvoices((prev) =>
+        prev.map((inv) => {
+          const curr = inv.id ?? inv.invoice_id ?? inv.invoice_number;
+          return curr === invoiceId ? { ...inv, status: newStatus } : inv;
+        }),
+      );
+    } catch (err) {
+      console.error("Failed to update invoice status", err);
+      alert("Failed to update invoice status.");
+    } finally {
+      setUpdatingInvoiceId(null);
+    }
+  }
 
   function handleLogout() {
     sessionStorage.clear();
@@ -69,21 +107,35 @@ function Dashboard() {
   }
 
   function exportData() {
-    const dataStr = JSON.stringify({ invoices, customers }, null, 2);
+    const report = {
+      export_date: new Date().toISOString(),
+      summary: {
+        total_invoices: invoices.length,
+        total_customers: customers.length,
+        total_revenue: stats.totalRevenue,
+        paid_invoices: stats.paidInvoices,
+        conversion_rate: `${stats.conversionRate}%`,
+      },
+      invoices,
+      customers,
+    };
+
+    const dataStr = JSON.stringify(report, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `erp-data-${new Date().toISOString().split("T")[0]}.json`;
+    link.download = `financial-report-${new Date().toISOString().split("T")[0]}.json`;
     link.click();
   }
 
   const recentInvoices = invoices.slice(0, 5);
+  const displayedInvoices = showAllInvoices ? invoices : recentInvoices;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.08),transparent_25%),radial-gradient(circle_at_80%_0%,rgba(59,130,246,0.12),transparent_30%),linear-gradient(135deg,#0f172a,#0b1224)] px-4 py-10 text-slate-100">
-      <div className="mx-auto max-w-6xl space-y-4">
-        <header className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
+    <DashboardLayout title="Finance Control Center">
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
           <div className="flex items-center gap-3">
             <span className="h-3 w-3 rounded-full bg-gradient-to-br from-cyan-400 to-violet-500 shadow-[0_0_16px_rgba(34,211,238,0.8)]" />
             <div>
@@ -113,7 +165,7 @@ function Dashboard() {
               Logout
             </button>
           </div>
-        </header>
+        </div>
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
           <h2 className="text-2xl font-semibold">Welcome back</h2>
@@ -189,15 +241,25 @@ function Dashboard() {
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Recent Invoices</h3>
-            <span className="text-sm text-slate-400">
-              Showing {recentInvoices.length} of {invoices.length}
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-lg font-semibold">Previous Vouchers / Bills</h3>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-400">
+                Showing {displayedInvoices.length} of {invoices.length}
+              </span>
+              {invoices.length > 5 && (
+                <button
+                  className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
+                  onClick={() => setShowAllInvoices((prev) => !prev)}
+                >
+                  {showAllInvoices ? "Show Recent Only" : "View All Previous Bills"}
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[540px] border-collapse text-sm">
+            <table className="w-full min-w-[620px] border-collapse text-sm">
               <thead className="text-slate-400">
                 <tr>
                   <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">
@@ -221,17 +283,21 @@ function Dashboard() {
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="px-3 py-6 text-center text-slate-400">
-                      Loading invoices…
+                      Loading invoices...
                     </td>
                   </tr>
-                ) : recentInvoices.length === 0 ? (
+                ) : displayedInvoices.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-3 py-6 text-center text-slate-400">
                       No invoices yet. Create one to get started.
                     </td>
                   </tr>
                 ) : (
-                  recentInvoices.map((invoice, idx) => (
+                  displayedInvoices.map((invoice, idx) => {
+                    const invoiceId = invoice.id ?? invoice.invoice_id ?? invoice.invoice_number;
+                    const currentStatus = invoice.status ?? "draft";
+
+                    return (
                     <tr key={idx} className="hover:bg-white/5">
                       <td className="border-b border-white/5 px-3 py-2 font-semibold">
                         {invoice.invoice_number ?? invoice.invoice_id ?? "—"}
@@ -250,19 +316,33 @@ function Dashboard() {
                         ${Number(invoice.total ?? invoice.amount ?? 0).toLocaleString()}
                       </td>
                       <td className="border-b border-white/5 px-3 py-2">
-                        <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold capitalize">
-                          {invoice.status ?? "draft"}
-                        </span>
+                        <select
+                          value={currentStatus}
+                          disabled={updatingInvoiceId === invoiceId}
+                          onChange={(e) => void updateInvoiceStatus(invoice, e.target.value)}
+                          className="rounded-lg border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold capitalize text-slate-100 outline-none"
+                        >
+                          <option value="draft" className="text-black">
+                            Draft
+                          </option>
+                          <option value="sent" className="text-black">
+                            Sent
+                          </option>
+                          <option value="paid" className="text-black">
+                            Paid
+                          </option>
+                        </select>
                       </td>
                     </tr>
-                  ))
+                  );
+                  })
                 )}
               </tbody>
             </table>
           </div>
         </section>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
 

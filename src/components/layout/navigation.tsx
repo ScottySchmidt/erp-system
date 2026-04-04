@@ -14,7 +14,7 @@ type NavigationItem = {
 const userNav: NavigationItem[] = [
   {
     title: "Overview",
-    to: "/dashboard",
+    to: "/erp/dashboard",
     icon: Icon.LayoutDashboard,
   },
   {

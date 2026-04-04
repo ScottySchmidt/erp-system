@@ -102,6 +102,12 @@ function Dashboard() {
             </button>
             <button
               className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/25"
+              onClick={() => navigate({ to: "/erp/new-vendor" })}
+            >
+              + New Vendor
+            </button>
+            <button
+              className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/25"
               onClick={handleLogout}
             >
               Logout
@@ -159,6 +165,12 @@ function Dashboard() {
                 onClick={() => navigate({ to: "/erp/invoice" })}
               >
                 New Invoice
+              </button>
+              <button
+                className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
+                onClick={() => navigate({ to: "/erp/new-vendor" })}
+              >
+                New Vendor
               </button>
               <button
                 className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"

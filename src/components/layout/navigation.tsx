@@ -24,7 +24,7 @@ const userNav: NavigationItem[] = [
   },
   {
     title: "Vendors",
-    to: "/", // TODO
+    to: "/erp/new-vendor",
     icon: Icon.Building2,
   },
 ];

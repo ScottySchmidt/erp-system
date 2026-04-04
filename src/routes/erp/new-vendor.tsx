@@ -1,7 +1,12 @@
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
+import { z } from "zod";
 
-import { supabaseBrowser } from "#/lib/supabaseBrowser";
+import { DashboardLayout } from "#/components/layout/dashboard";
+import { DatabaseProvider } from "#/lib/provider";
+import { t } from "#/lib/server/database";
 
 export const Route = createFileRoute("/erp/new-vendor")({
   component: VendorInsertPage,
@@ -10,13 +15,53 @@ export const Route = createFileRoute("/erp/new-vendor")({
 type VendorInsertResult = {
   vendor_id: number;
   vendor_name: string;
-  vendor_address: string;
+  vendor_address: string | null;
 };
 
+const VendorInsertSchema = z.object({
+  vendor_name: z.string().trim().min(1, "Vendor name is required"),
+  house_number: z.string().trim().min(1, "House number is required"),
+  street: z.string().trim().min(1, "Street is required"),
+  city: z.string().trim().min(1, "City is required"),
+  state: z.string().trim().min(1, "State is required"),
+  postal_code: z.string().trim().min(1, "Postal code is required"),
+});
+
+const insertVendor = createServerFn()
+  .middleware([DatabaseProvider])
+  .inputValidator(VendorInsertSchema)
+  .handler(async ({ data, context }) => {
+    const vendor_address = `${data.house_number} ${data.street}, ${data.city}, ${data.state} ${data.postal_code}`;
+
+    const inserted = await context.db
+      .insert(t.vendor)
+      .values({
+        vendor_name: data.vendor_name,
+        vendor_address,
+      })
+      .returning()
+      .then((rows) => rows[0]);
+
+    if (!inserted) {
+      throw new Error("Failed to create vendor");
+    }
+
+    return {
+      vendor_id: inserted.vendor_id,
+      vendor_name: inserted.vendor_name,
+      vendor_address: inserted.vendor_address,
+    };
+  });
+
 function VendorInsertPage() {
+  const mutation = useMutation({ mutationFn: insertVendor });
   const [loading, setLoading] = useState(false);
   const [vendorName, setVendorName] = useState("");
-  const [vendorAddress, setVendorAddress] = useState("");
+  const [houseNumber, setHouseNumber] = useState("");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [stateRegion, setStateRegion] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [lastInserted, setLastInserted] = useState<VendorInsertResult | null>(null);
 
@@ -27,59 +72,44 @@ function VendorInsertPage() {
     setLastInserted(null);
 
     const trimmedName = vendorName.trim();
-    const trimmedAddress = vendorAddress.trim();
-
-    if (!trimmedName || !trimmedAddress) {
-      setMessage({ type: "error", text: "Please fill in vendor name and vendor address." });
-      setLoading(false);
-      return;
-    }
-
-    if (!supabaseBrowser) {
-      setMessage({
-        type: "error",
-        text: "Supabase is not configured. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
-      });
-      setLoading(false);
-      return;
-    }
+    const payload = {
+      vendor_name: trimmedName,
+      house_number: houseNumber.trim(),
+      street: street.trim(),
+      city: city.trim(),
+      state: stateRegion.trim(),
+      postal_code: postalCode.trim(),
+    };
 
     try {
-      const { data, error } = await supabaseBrowser
-        .from("vendor")
-        .insert([
-          {
-            vendor_name: trimmedName,
-            vendor_address: trimmedAddress,
-          },
-        ])
-        .select("vendor_id, vendor_name, vendor_address")
-        .single();
+      const payload = await mutation.mutateAsync({
+        data: payload,
+      });
 
-      if (error) {
-        console.error(error);
-        setMessage({ type: "error", text: `Error: ${error.message}` });
-      } else {
-        console.log(data);
-        setLastInserted(data);
-        setVendorName("");
-        setVendorAddress("");
-        setMessage({
-          type: "success",
-          text: `Vendor created successfully (ID: ${data.vendor_id}).`,
-        });
-      }
+      setLastInserted(payload);
+      setVendorName("");
+      setHouseNumber("");
+      setStreet("");
+      setCity("");
+      setStateRegion("");
+      setPostalCode("");
+      setMessage({
+        type: "success",
+        text: `Vendor created successfully (ID: ${payload.vendor_id}).`,
+      });
     } catch (err) {
+      const text =
+        err instanceof Error ? err.message : "Unexpected error while inserting vendor. Try again.";
+      setMessage({ type: "error", text });
       console.error(err);
-      setMessage({ type: "error", text: "Unexpected error while inserting vendor." });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 text-slate-100">
-      <div className="mx-auto max-w-2xl rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
+    <DashboardLayout title="Vendors">
+      <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
         <h1 className="mb-2 text-2xl font-semibold">New Vendor</h1>
         <p className="mb-6 text-sm text-slate-300">
           Insert a new row into the <code>vendor</code> table. <code>vendor_id</code> is
@@ -97,16 +127,53 @@ function VendorInsertPage() {
             />
           </label>
 
-          <label className="flex flex-col gap-2 text-sm">
-            <span className="text-slate-300">Vendor Address</span>
-            <textarea
-              value={vendorAddress}
-              onChange={(e) => setVendorAddress(e.target.value)}
-              rows={3}
-              placeholder="123 Main St, Springfield, IL 62701"
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
-            />
-          </label>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="text-slate-300">House Number</span>
+              <input
+                value={houseNumber}
+                onChange={(e) => setHouseNumber(e.target.value)}
+                placeholder="123"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="text-slate-300">Street</span>
+              <input
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
+                placeholder="Main Street"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="text-slate-300">City</span>
+              <input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Springfield"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="text-slate-300">State / Province</span>
+              <input
+                value={stateRegion}
+                onChange={(e) => setStateRegion(e.target.value)}
+                placeholder="IL"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm md:col-span-2">
+              <span className="text-slate-300">Postal Code</span>
+              <input
+                value={postalCode}
+                onChange={(e) => setPostalCode(e.target.value)}
+                placeholder="62701"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
+              />
+            </label>
+          </div>
 
           <div className="flex justify-end">
             <button
@@ -140,6 +207,6 @@ function VendorInsertPage() {
           </div>
         )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

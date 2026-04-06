@@ -3,14 +3,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
+import { and, eq } from "drizzle-orm";
 
 import { DashboardLayout } from "#/components/layout/dashboard";
+import { redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
-import { eq } from "drizzle-orm";
+import { MustAuthenticate } from "#/lib/auth";
 
-export const Route = createFileRoute("/erp/new-vendor")({
+export const Route = createFileRoute("/erp/vendor/new")({
   component: VendorInsertPage,
+  beforeLoad: async ({ context }) => {
+    await redirectIfSignedOut(context);
+  },
 });
 
 type VendorInsertResult = {
@@ -29,7 +34,7 @@ const VendorInsertSchema = z.object({
 });
 
 const insertVendor = createServerFn()
-  .middleware([DatabaseProvider])
+  .middleware([DatabaseProvider, MustAuthenticate])
   .inputValidator(VendorInsertSchema)
   .handler(async ({ data, context }) => {
     const vendor_address = `${data.house_number} ${data.street}, ${data.city}, ${data.state} ${data.postal_code}`;
@@ -45,7 +50,7 @@ const insertVendor = createServerFn()
       return {
         vendor_id: v.vendor_id,
         vendor_name: v.vendor_name,
-        vendor_address: v.vendor_address,
+        vendor_address: v.vendor_address
       };
     }
 
@@ -87,22 +92,21 @@ function VendorInsertPage() {
     setMessage(null);
     setLastInserted(null);
 
-    const trimmedName = vendorName.trim();
-    const payload = {
-      vendor_name: trimmedName,
-      house_number: houseNumber.trim(),
-      street: street.trim(),
-      city: city.trim(),
-      state: stateRegion.trim(),
-      postal_code: postalCode.trim(),
-    };
-
     try {
-      const payload = await mutation.mutateAsync({
+      const payload = {
+        vendor_name: vendorName.trim(),
+        house_number: houseNumber.trim(),
+        street: street.trim(),
+        city: city.trim(),
+        state: stateRegion.trim(),
+        postal_code: postalCode.trim(),
+      };
+
+      const result = await mutation.mutateAsync({
         data: payload,
       });
 
-      setLastInserted(payload);
+      setLastInserted(result);
       setVendorName("");
       setHouseNumber("");
       setStreet("");
@@ -111,7 +115,7 @@ function VendorInsertPage() {
       setPostalCode("");
       setMessage({
         type: "success",
-        text: `Vendor created successfully (ID: ${payload.vendor_id}).`,
+        text: `Vendor created successfully (ID: ${result.vendor_id}).`,
       });
     } catch (err) {
       const text =
@@ -153,6 +157,7 @@ function VendorInsertPage() {
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
               />
             </label>
+
             <label className="flex flex-col gap-2 text-sm">
               <span className="text-slate-300">Street</span>
               <input
@@ -162,6 +167,7 @@ function VendorInsertPage() {
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
               />
             </label>
+
             <label className="flex flex-col gap-2 text-sm">
               <span className="text-slate-300">City</span>
               <input
@@ -171,6 +177,7 @@ function VendorInsertPage() {
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
               />
             </label>
+
             <label className="flex flex-col gap-2 text-sm">
               <span className="text-slate-300">State / Province</span>
               <input
@@ -180,6 +187,7 @@ function VendorInsertPage() {
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none placeholder:text-slate-400"
               />
             </label>
+
             <label className="flex flex-col gap-2 text-sm md:col-span-2">
               <span className="text-slate-300">Postal Code</span>
               <input

@@ -1,7 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 
 import { supabaseBrowser } from "#/lib/supabaseBrowser";
+import { DatabaseProvider } from "#/lib/provider";
+import { MustAuthenticate } from "#/lib/auth";
+import { t } from "#/lib/server/database";
 
 export const Route = createFileRoute("/erp/invoice")({
   component: InvoicePage,
@@ -17,8 +22,37 @@ type LineItem = {
 
 type Vendor = { id: string; name: string };
 
+const InvoiceCreateSchema = z.object({
+  vendor_id: z.number().int().positive(),
+  invoice_date: z.string().min(1),
+  amount: z.number(),
+  account_id: z.number().int().optional(),
+});
+
+const createInvoice = createServerFn()
+  .middleware([DatabaseProvider, MustAuthenticate])
+  .inputValidator(InvoiceCreateSchema)
+  .handler(async ({ data, context }) => {
+    const inserted = await context.db
+      .insert(t.invoices)
+      .values({
+        user_id: context.auth.profile.user_id!,
+        account_id: data.account_id ?? 1,
+        vendor_id: data.vendor_id,
+        invoice_date: data.invoice_date,
+        amount: data.amount,
+        created_date: today(),
+      })
+      .returning({ invoice_id: t.invoices.invoice_id })
+      .then((rows) => rows[0]);
+
+    if (!inserted) throw new Error("Failed to create invoice");
+    return inserted;
+  });
+
 function InvoicePage() {
   const navigate = useNavigate();
+  const [pageLoading, setPageLoading] = useState(true);
   const [invoiceDate, setInvoiceDate] = useState(today());
   const [dueDate, setDueDate] = useState(inNDays(30));
   const [vendorId, setVendorId] = useState("");
@@ -68,7 +102,14 @@ function InvoicePage() {
 
     const local = JSON.parse(localStorage.getItem("erp_vendors") ?? "[]");
     setVendors(local.map((c: any) => ({ id: c.id ?? c.name, name: c.name ?? c.vendor_name })));
+    setPageLoading(false);
   }
+
+  useEffect(() => {
+    if (vendors.length) {
+      setPageLoading(false);
+    }
+  }, [vendors]);
 
   function addRow() {
     setLineItems((rows) => [
@@ -109,40 +150,35 @@ function InvoicePage() {
       setError("Add at least one line item.");
       return;
     }
+    if (!vendorId) {
+      setError("Select a vendor.");
+      return;
+    }
     setError("");
     setSaving(true);
 
-    const invoiceData = {
-      invoice_number: `INV-${Date.now()}`,
-      date: invoiceDate,
-      due_date: dueDate,
-      vendor_id: vendorId,
-      vendor_name: vendors.find((v) => v.id === vendorId)?.name ?? "",
-      subtotal: totals.subtotal,
-      tax: totals.tax,
-      total: totals.total,
-      line_items: lineItems,
-      status: "sent",
-    };
-
     try {
-      if (supabaseBrowser) {
-        await supabaseBrowser.from("invoices").insert([invoiceData]);
-      }
-    } catch {
-      // ignore and fall back to local storage
+      await createInvoice({
+        data: {
+          vendor_id: Number(vendorId),
+          invoice_date: invoiceDate,
+          amount: totals.total,
+          account_id: 1,
+        },
+      });
+      localStorage.removeItem("currentLineItems");
+      await navigate({ to: "/erp/dashboard" });
+    } catch (err) {
+      const text = err instanceof Error ? err.message : "Failed to save invoice.";
+      setError(text);
+    } finally {
+      setSaving(false);
     }
-
-    const local = JSON.parse(localStorage.getItem("erp_invoices") ?? "[]");
-    local.unshift(invoiceData);
-    localStorage.setItem("erp_invoices", JSON.stringify(local));
-    localStorage.removeItem("currentLineItems");
-
-    await navigate({ to: "/erp/dashboard" });
   }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.08),transparent_25%),radial-gradient(circle_at_80%_0%,rgba(59,130,246,0.12),transparent_30%),linear-gradient(135deg,#0f172a,#0b1224)] px-4 py-10 text-slate-100">
+      {pageLoading && <LoadingOverlay label="Loading invoice..." />}
           <div className="mx-auto max-w-5xl space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h1 className="text-2xl font-semibold">New Invoice</h1>
@@ -328,4 +364,15 @@ function inNDays(days: number) {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+function LoadingOverlay({ label }: { label: string }) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/60 backdrop-blur">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-6 py-5 text-sm text-slate-100 shadow-lg">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/60 border-t-transparent" />
+        <span>{label}</span>
+      </div>
+    </div>
+  );
 }

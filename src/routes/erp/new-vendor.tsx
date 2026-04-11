@@ -19,6 +19,12 @@ type VendorListItem = {
   vendor_address: string | null;
 };
 
+type VendorListResponse = {
+  ok: boolean;
+  vendors?: VendorListItem[];
+  error?: string;
+};
+
 function VendorInsertPage() {
   const [loading, setLoading] = useState(false);
   const [vendorName, setVendorName] = useState("");
@@ -34,20 +40,14 @@ function VendorInsertPage() {
     setVendorsError(null);
 
     try {
-      if (!supabaseBrowser) {
-        throw new Error("Supabase is not configured.");
+      const response = await fetch("/api/display-vendors");
+      const payload = (await response.json()) as VendorListResponse;
+
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error ?? "Failed to load vendors.");
       }
 
-      const { data, error } = await supabaseBrowser
-        .from("vendor")
-        .select("vendor_id, vendor_name, vendor_address")
-        .order("vendor_id", { ascending: false });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      setVendors(data ?? []);
+      setVendors(payload.vendors ?? []);
     } catch (err) {
       setVendorsError(err instanceof Error ? err.message : "Unknown error while loading vendors.");
     } finally {

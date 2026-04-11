@@ -19,12 +19,6 @@ type VendorListItem = {
   vendor_address: string | null;
 };
 
-type VendorListResponse = {
-  ok: boolean;
-  vendors?: VendorListItem[];
-  error?: string;
-};
-
 function VendorInsertPage() {
   const [loading, setLoading] = useState(false);
   const [vendorName, setVendorName] = useState("");
@@ -40,14 +34,20 @@ function VendorInsertPage() {
     setVendorsError(null);
 
     try {
-      const response = await fetch("/api/display-vendors");
-      const payload = (await response.json()) as VendorListResponse;
-
-      if (!response.ok || !payload.ok) {
-        throw new Error(payload.error ?? "Failed to load vendors.");
+      if (!supabaseBrowser) {
+        throw new Error("Supabase is not configured.");
       }
 
-      setVendors(payload.vendors ?? []);
+      const { data, error } = await supabaseBrowser
+        .from("vendor")
+        .select("vendor_id, vendor_name, vendor_address")
+        .order("vendor_id", { ascending: false });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setVendors(data ?? []);
     } catch (err) {
       setVendorsError(err instanceof Error ? err.message : "Unknown error while loading vendors.");
     } finally {
@@ -180,72 +180,64 @@ function VendorInsertPage() {
           </div>
         )}
 
-        <details className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4">
-          <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-slate-100">
-            <span>Vendor Directory</span>
-            <span className="text-xs font-medium text-slate-300">
-              {vendorsLoading ? "Loading…" : `${vendors.length} vendors`}
-            </span>
-          </summary>
-
-          <div className="mt-4 space-y-3">
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => void loadVendors()}
-                disabled={vendorsLoading}
-                className="rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:border-white/25 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {vendorsLoading ? "Refreshing…" : "Refresh list"}
-              </button>
-            </div>
-
-            <div className="overflow-x-auto rounded-lg border border-white/10">
-              <table className="w-full min-w-[540px] border-collapse text-left text-sm text-slate-200">
-                <thead className="bg-white/5 text-xs uppercase tracking-wide text-slate-400">
-                  <tr>
-                    <th className="border-b border-white/10 px-3 py-2 font-semibold">ID</th>
-                    <th className="border-b border-white/10 px-3 py-2 font-semibold">Vendor Name</th>
-                    <th className="border-b border-white/10 px-3 py-2 font-semibold">Address</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vendorsLoading ? (
-                    <tr>
-                      <td colSpan={3} className="px-3 py-5 text-center text-slate-400">
-                        Loading vendors…
-                      </td>
-                    </tr>
-                  ) : vendorsError ? (
-                    <tr>
-                      <td colSpan={3} className="px-3 py-5 text-center text-red-200">
-                        {vendorsError}
-                      </td>
-                    </tr>
-                  ) : vendors.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="px-3 py-5 text-center text-slate-400">
-                        No vendors found.
-                      </td>
-                    </tr>
-                  ) : (
-                    vendors.map((vendor) => (
-                      <tr key={vendor.vendor_id} className="odd:bg-white/[0.03] hover:bg-white/[0.06]">
-                        <td className="border-b border-white/5 px-3 py-2 font-semibold text-cyan-100">
-                          {vendor.vendor_id}
-                        </td>
-                        <td className="border-b border-white/5 px-3 py-2">{vendor.vendor_name}</td>
-                        <td className="border-b border-white/5 px-3 py-2 text-slate-300">
-                          {vendor.vendor_address ?? "—"}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+        <section className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-slate-100">Vendor Table</h2>
+            <button
+              type="button"
+              onClick={() => void loadVendors()}
+              disabled={vendorsLoading}
+              className="rounded-lg border border-white/15 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:border-white/25 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {vendorsLoading ? "Refreshing…" : "Refresh"}
+            </button>
           </div>
-        </details>
+
+          <div className="overflow-x-auto rounded-lg border border-white/10">
+            <table className="w-full min-w-[540px] border-collapse text-left text-sm text-slate-200">
+              <thead className="bg-white/5 text-xs uppercase tracking-wide text-slate-400">
+                <tr>
+                  <th className="border-b border-white/10 px-3 py-2 font-semibold">ID</th>
+                  <th className="border-b border-white/10 px-3 py-2 font-semibold">Vendor Name</th>
+                  <th className="border-b border-white/10 px-3 py-2 font-semibold">Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vendorsLoading ? (
+                  <tr>
+                    <td colSpan={3} className="px-3 py-5 text-center text-slate-400">
+                      Loading vendors…
+                    </td>
+                  </tr>
+                ) : vendorsError ? (
+                  <tr>
+                    <td colSpan={3} className="px-3 py-5 text-center text-red-200">
+                      {vendorsError}
+                    </td>
+                  </tr>
+                ) : vendors.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-3 py-5 text-center text-slate-400">
+                      No vendors found.
+                    </td>
+                  </tr>
+                ) : (
+                  vendors.map((vendor) => (
+                    <tr key={vendor.vendor_id} className="odd:bg-white/[0.03] hover:bg-white/[0.06]">
+                      <td className="border-b border-white/5 px-3 py-2 font-semibold text-cyan-100">
+                        {vendor.vendor_id}
+                      </td>
+                      <td className="border-b border-white/5 px-3 py-2">{vendor.vendor_name}</td>
+                      <td className="border-b border-white/5 px-3 py-2 text-slate-300">
+                        {vendor.vendor_address ?? "—"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </div>
   );

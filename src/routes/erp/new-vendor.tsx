@@ -38,7 +38,7 @@ function VendorInsertPage() {
     if (!supabaseBrowser) {
       setMessage({
         type: "error",
-        text: "Supabase is not configured. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
+        text: "Supabase is not configured. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or VITE_SUPABASE_KEY).",
       });
       setLoading(false);
       return;

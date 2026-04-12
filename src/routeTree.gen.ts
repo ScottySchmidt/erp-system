@@ -10,9 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestRouteImport } from './routes/test'
-import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as InvoiceIndexRouteImport } from './routes/invoice/index'
 import { Route as InvoiceNewRouteImport } from './routes/invoice/new'
 import { Route as InvoiceIdRouteImport } from './routes/invoice/$id'
@@ -34,11 +34,6 @@ const TestRoute = TestRouteImport.update({
   path: '/test',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -47,6 +42,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvoiceIndexRoute = InvoiceIndexRouteImport.update({
@@ -128,7 +128,6 @@ const AuthPasswordForgotRoute = AuthPasswordForgotRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
-  '/settings': typeof SettingsRoute
   '/test': typeof TestRoute
   '/api/add-vendor': typeof ApiAddVendorRoute
   '/api/display-vendors': typeof ApiDisplayVendorsRoute
@@ -143,13 +142,13 @@ export interface FileRoutesByFullPath {
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
   '/invoice/': typeof InvoiceIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/auth/password/forgot': typeof AuthPasswordForgotRoute
   '/auth/password/reset': typeof AuthPasswordResetRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
-  '/settings': typeof SettingsRoute
   '/test': typeof TestRoute
   '/api/add-vendor': typeof ApiAddVendorRoute
   '/api/display-vendors': typeof ApiDisplayVendorsRoute
@@ -164,6 +163,7 @@ export interface FileRoutesByTo {
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
   '/invoice': typeof InvoiceIndexRoute
+  '/settings': typeof SettingsIndexRoute
   '/auth/password/forgot': typeof AuthPasswordForgotRoute
   '/auth/password/reset': typeof AuthPasswordResetRoute
 }
@@ -171,7 +171,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
-  '/settings': typeof SettingsRoute
   '/test': typeof TestRoute
   '/api/add-vendor': typeof ApiAddVendorRoute
   '/api/display-vendors': typeof ApiDisplayVendorsRoute
@@ -186,6 +185,7 @@ export interface FileRoutesById {
   '/invoice/$id': typeof InvoiceIdRoute
   '/invoice/new': typeof InvoiceNewRoute
   '/invoice/': typeof InvoiceIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/auth/password/forgot': typeof AuthPasswordForgotRoute
   '/auth/password/reset': typeof AuthPasswordResetRoute
 }
@@ -194,7 +194,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
-    | '/settings'
     | '/test'
     | '/api/add-vendor'
     | '/api/display-vendors'
@@ -209,13 +208,13 @@ export interface FileRouteTypes {
     | '/invoice/$id'
     | '/invoice/new'
     | '/invoice/'
+    | '/settings/'
     | '/auth/password/forgot'
     | '/auth/password/reset'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
-    | '/settings'
     | '/test'
     | '/api/add-vendor'
     | '/api/display-vendors'
@@ -230,13 +229,13 @@ export interface FileRouteTypes {
     | '/invoice/$id'
     | '/invoice/new'
     | '/invoice'
+    | '/settings'
     | '/auth/password/forgot'
     | '/auth/password/reset'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
-    | '/settings'
     | '/test'
     | '/api/add-vendor'
     | '/api/display-vendors'
@@ -251,6 +250,7 @@ export interface FileRouteTypes {
     | '/invoice/$id'
     | '/invoice/new'
     | '/invoice/'
+    | '/settings/'
     | '/auth/password/forgot'
     | '/auth/password/reset'
   fileRoutesById: FileRoutesById
@@ -258,7 +258,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
-  SettingsRoute: typeof SettingsRoute
   TestRoute: typeof TestRoute
   ApiAddVendorRoute: typeof ApiAddVendorRoute
   ApiDisplayVendorsRoute: typeof ApiDisplayVendorsRoute
@@ -273,6 +272,7 @@ export interface RootRouteChildren {
   InvoiceIdRoute: typeof InvoiceIdRoute
   InvoiceNewRoute: typeof InvoiceNewRoute
   InvoiceIndexRoute: typeof InvoiceIndexRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
   AuthPasswordForgotRoute: typeof AuthPasswordForgotRoute
   AuthPasswordResetRoute: typeof AuthPasswordResetRoute
 }
@@ -284,13 +284,6 @@ declare module '@tanstack/react-router' {
       path: '/test'
       fullPath: '/test'
       preLoaderRoute: typeof TestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -305,6 +298,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invoice/': {
@@ -418,7 +418,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
-  SettingsRoute: SettingsRoute,
   TestRoute: TestRoute,
   ApiAddVendorRoute: ApiAddVendorRoute,
   ApiDisplayVendorsRoute: ApiDisplayVendorsRoute,
@@ -433,6 +432,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvoiceIdRoute: InvoiceIdRoute,
   InvoiceNewRoute: InvoiceNewRoute,
   InvoiceIndexRoute: InvoiceIndexRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
   AuthPasswordForgotRoute: AuthPasswordForgotRoute,
   AuthPasswordResetRoute: AuthPasswordResetRoute,
 }

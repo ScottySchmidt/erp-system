@@ -6,10 +6,12 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+const enableDevtools = process.env.TANSTACK_DEVTOOLS !== "false";
+
 export default defineConfig({
   plugins: [
-    devtools(),
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    enableDevtools ? devtools() : undefined,
+    cloudflare({ inspectorPort: false, viteEnvironment: { name: "ssr" } }),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
     tailwindcss(),
     tanstackStart({
@@ -21,5 +23,5 @@ export default defineConfig({
       },
     }),
     viteReact(),
-  ],
+  ].filter(Boolean),
 });

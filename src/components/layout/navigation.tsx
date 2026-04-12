@@ -14,7 +14,7 @@ type NavigationItem = {
 const userNav: NavigationItem[] = [
   {
     title: "Overview",
-    to: "/dashboard",
+    to: "/erp/dashboard",
     icon: Icon.LayoutDashboard,
   },
   {
@@ -24,7 +24,7 @@ const userNav: NavigationItem[] = [
   },
   {
     title: "Vendors",
-    to: "/", // TODO
+    to: "/erp/vendor",
     icon: Icon.Building2,
   },
 ];

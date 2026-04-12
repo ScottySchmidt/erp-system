@@ -3,12 +3,14 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { eq } from "drizzle-orm";
 import * as v from "valibot";
 
 import { FieldError } from "#/components/form";
 import { AuthLayout } from "#/components/layout/auth";
 import { redirectIfSignedIn, useAuthInfoQuery } from "#/lib/auth";
 import { DatabaseProvider, SupabaseProvider } from "#/lib/provider";
+import { t } from "#/lib/server/database";
 import { IntStrSchema } from "#/lib/validation";
 
 import { styles } from "./-styles";
@@ -33,10 +35,39 @@ const registerFn = createServerFn()
   .middleware([DatabaseProvider, SupabaseProvider])
   .inputValidator(RegisterSchema)
   .handler(async ({ data, context }) => {
-    await context.supabase.auth.signUp({
+    const { data: authData, error } = await context.supabase.auth.signUp({
       email: data.email,
       password: data.password,
     });
+
+    if (error) {
+      throw error;
+    }
+
+    const authUser = authData.user;
+    if (!authUser) {
+      throw new Error("Sign up failed: user not returned from Supabase.");
+    }
+
+    const profileValues = {
+      auth_id: authUser.id,
+      email: data.email,
+      full_name: data.full_name,
+      role_id: data.role_id,
+      dept_id: data.dept_id,
+    };
+
+    const existing = await context.db
+      .select()
+      .from(t.users)
+      .where(eq(t.users.auth_id, authUser.id))
+      .limit(1);
+
+    if (existing.length) {
+      await context.db.update(t.users).set(profileValues).where(eq(t.users.auth_id, authUser.id));
+    } else {
+      await context.db.insert(t.users).values(profileValues);
+    }
   });
 
 function RegisterPage() {

@@ -1,7 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 
 import { supabaseBrowser } from "#/lib/supabaseBrowser";
+import { DatabaseProvider } from "#/lib/provider";
+import { MustAuthenticate } from "#/lib/auth";
+import { t } from "#/lib/server/database";
 
 export const Route = createFileRoute("/erp/invoice")({
   component: InvoicePage,
@@ -15,14 +20,43 @@ type LineItem = {
   tax_rate: number;
 };
 
-type Customer = { id: string; name: string };
+type Vendor = { id: string; name: string };
+
+const InvoiceCreateSchema = z.object({
+  vendor_id: z.number().int().positive(),
+  invoice_date: z.string().min(1),
+  amount: z.number(),
+  account_id: z.number().int().optional(),
+});
+
+const createInvoice = createServerFn()
+  .middleware([DatabaseProvider, MustAuthenticate])
+  .inputValidator(InvoiceCreateSchema)
+  .handler(async ({ data, context }) => {
+    const inserted = await context.db
+      .insert(t.invoices)
+      .values({
+        user_id: context.auth.profile.user_id!,
+        account_id: data.account_id ?? 1,
+        vendor_id: data.vendor_id,
+        invoice_date: data.invoice_date,
+        amount: data.amount,
+        created_date: today(),
+      })
+      .returning({ invoice_id: t.invoices.invoice_id })
+      .then((rows) => rows[0]);
+
+    if (!inserted) throw new Error("Failed to create invoice");
+    return inserted;
+  });
 
 function InvoicePage() {
   const navigate = useNavigate();
+  const [pageLoading, setPageLoading] = useState(true);
   const [invoiceDate, setInvoiceDate] = useState(today());
   const [dueDate, setDueDate] = useState(inNDays(30));
-  const [customer, setCustomer] = useState("");
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [vendorId, setVendorId] = useState("");
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -40,21 +74,25 @@ function InvoicePage() {
     } else {
       addRow();
     }
-    void loadCustomers();
+    void loadVendors();
   }, [navigate]);
 
   useEffect(() => {
     localStorage.setItem("currentLineItems", JSON.stringify(lineItems));
   }, [lineItems]);
 
-  async function loadCustomers() {
+  async function loadVendors() {
     try {
       if (supabaseBrowser) {
-        const { data, error } = await supabaseBrowser
-          .from("vendor")
-          .select("vendor_id, vendor_name");
+        const { data, error } = await supabaseBrowser.from("vendor").select("vendor_id, vendor_name");
         if (!error && data) {
-          setCustomers(data.map((v) => ({ id: String(v.vendor_id), name: v.vendor_name })));
+          const uniqueByName = Object.values(
+            data.reduce<Record<string, Vendor>>((acc, v) => {
+              if (!acc[v.vendor_name]) acc[v.vendor_name] = { id: String(v.vendor_id), name: v.vendor_name };
+              return acc;
+            }, {}),
+          );
+          setVendors(uniqueByName);
           return;
         }
       }
@@ -62,9 +100,16 @@ function InvoicePage() {
       // fall back below
     }
 
-    const local = JSON.parse(localStorage.getItem("erp_customers") ?? "[]");
-    setCustomers(local.map((c: any) => ({ id: c.id ?? c.name, name: c.name ?? c.vendor_name })));
+    const local = JSON.parse(localStorage.getItem("erp_vendors") ?? "[]");
+    setVendors(local.map((c: any) => ({ id: c.id ?? c.name, name: c.name ?? c.vendor_name })));
+    setPageLoading(false);
   }
+
+  useEffect(() => {
+    if (vendors.length) {
+      setPageLoading(false);
+    }
+  }, [vendors]);
 
   function addRow() {
     setLineItems((rows) => [
@@ -105,44 +150,40 @@ function InvoicePage() {
       setError("Add at least one line item.");
       return;
     }
+    if (!vendorId) {
+      setError("Select a vendor.");
+      return;
+    }
     setError("");
     setSaving(true);
 
-    const invoiceData = {
-      invoice_number: `INV-${Date.now()}`,
-      date: invoiceDate,
-      due_date: dueDate,
-      customer,
-      subtotal: totals.subtotal,
-      tax: totals.tax,
-      total: totals.total,
-      line_items: lineItems,
-      status: "sent",
-    };
-
     try {
-      if (supabaseBrowser) {
-        await supabaseBrowser.from("invoices").insert([invoiceData]);
-      }
-    } catch {
-      // ignore and fall back to local storage
+      await createInvoice({
+        data: {
+          vendor_id: Number(vendorId),
+          invoice_date: invoiceDate,
+          amount: totals.total,
+          account_id: 1,
+        },
+      });
+      localStorage.removeItem("currentLineItems");
+      await navigate({ to: "/erp/dashboard" });
+    } catch (err) {
+      const text = err instanceof Error ? err.message : "Failed to save invoice.";
+      setError(text);
+    } finally {
+      setSaving(false);
     }
-
-    const local = JSON.parse(localStorage.getItem("erp_invoices") ?? "[]");
-    local.unshift(invoiceData);
-    localStorage.setItem("erp_invoices", JSON.stringify(local));
-    localStorage.removeItem("currentLineItems");
-
-    await navigate({ to: "/erp/dashboard" });
   }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_20%_20%,rgba(34,211,238,0.08),transparent_25%),radial-gradient(circle_at_80%_0%,rgba(59,130,246,0.12),transparent_30%),linear-gradient(135deg,#0f172a,#0b1224)] px-4 py-10 text-slate-100">
-      <div className="mx-auto max-w-5xl space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold">New Invoice</h1>
-          <button
-            onClick={() => navigate({ to: "/erp/dashboard" })}
+      {pageLoading && <LoadingOverlay label="Loading invoice..." />}
+          <div className="mx-auto max-w-5xl space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h1 className="text-2xl font-semibold">New Invoice</h1>
+              <button
+                onClick={() => navigate({ to: "/erp/dashboard" })}
             className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold hover:border-white/25"
           >
             Back to dashboard
@@ -150,28 +191,28 @@ function InvoicePage() {
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Invoice Number">
-              <input
-                readOnly
-                value="Auto-generated"
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none"
-              />
-            </Field>
-            <Field label="Customer">
-              <select
-                value={customer}
-                onChange={(e) => setCustomer(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none"
-              >
-                <option value="">Select customer</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Invoice Number">
+                <input
+                  readOnly
+                  value="Auto-generated"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none"
+                />
+              </Field>
+              <Field label="Vendor">
+                <select
+                  value={vendorId}
+                  onChange={(e) => setVendorId(e.target.value)}
+                  className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none"
+                >
+                  <option value="">Select vendor</option>
+                  {vendors.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
             <Field label="Invoice Date">
               <input
                 type="date"
@@ -323,4 +364,15 @@ function inNDays(days: number) {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+function LoadingOverlay({ label }: { label: string }) {
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/60 backdrop-blur">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-white/10 bg-white/10 px-6 py-5 text-sm text-slate-100 shadow-lg">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-300/60 border-t-transparent" />
+        <span>{label}</span>
+      </div>
+    </div>
+  );
 }

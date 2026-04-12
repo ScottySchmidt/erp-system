@@ -16,6 +16,15 @@ type LineItem = {
 };
 
 type Customer = { id: string; name: string };
+type VendorApiResponse =
+  | {
+      ok: true;
+      vendors: Array<{ vendor_id: number; vendor_name: string }>;
+    }
+  | {
+      ok: false;
+      error?: string;
+    };
 
 function InvoicePage() {
   const navigate = useNavigate();
@@ -49,6 +58,20 @@ function InvoicePage() {
 
   async function loadCustomers() {
     try {
+      const response = await fetch("/api/display-vendors");
+      if (response.ok) {
+        const payload = (await response.json()) as VendorApiResponse;
+        if (payload.ok) {
+          setCustomers(
+            payload.vendors.map((vendor) => ({
+              id: String(vendor.vendor_id),
+              name: vendor.vendor_name,
+            })),
+          );
+          return;
+        }
+      }
+
       if (supabaseBrowser) {
         const { data, error } = await supabaseBrowser
           .from("vendor")
@@ -105,14 +128,20 @@ function InvoicePage() {
       setError("Add at least one line item.");
       return;
     }
+    if (!customer) {
+      setError("Please select a vendor.");
+      return;
+    }
     setError("");
     setSaving(true);
+    const selectedVendor = customers.find((vendor) => vendor.id === customer);
 
     const invoiceData = {
       invoice_number: `INV-${Date.now()}`,
       date: invoiceDate,
       due_date: dueDate,
-      customer,
+      customer: selectedVendor?.name ?? customer,
+      vendor_id: Number(customer),
       subtotal: totals.subtotal,
       tax: totals.tax,
       total: totals.total,
@@ -158,16 +187,16 @@ function InvoicePage() {
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none"
               />
             </Field>
-            <Field label="Customer">
+            <Field label="Vendor">
               <select
                 value={customer}
                 onChange={(e) => setCustomer(e.target.value)}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-3 text-sm text-slate-100 outline-none"
               >
-                <option value="">Select customer</option>
+                <option value="">Select vendor</option>
                 {customers.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.name}
+                  <option key={c.id} value={c.id}>
+                    {c.id} - {c.name}
                   </option>
                 ))}
               </select>

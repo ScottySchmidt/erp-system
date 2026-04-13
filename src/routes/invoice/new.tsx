@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
@@ -37,23 +38,36 @@ const createInvoice = createServerFn()
 
 function NewInvoicePage() {
   const router = useRouter();
+  const [successMessage, setSuccessMessage] = useState("");
 
   const mutation = useMutation({
     mutationFn: createInvoice,
     onSuccess: async (data) => {
-      await router.invalidate();
-      await router.navigate({
-        to: "/invoice/$id",
-        params: { id: data.invoice_id },
-      });
+      setSuccessMessage("Invoice created successfully!");
+
+      setTimeout(async () => {
+        await router.invalidate();
+        await router.navigate({
+          to: "/invoice/$id",
+          params: { id: data.invoice_id },
+        });
+      }, 1000);
     },
   });
 
   return (
-    <div className="mx-auto my-8 max-w-lg rounded-lg border border-gray-300 p-6 shadow">
+    <div className="mx-auto my-8 max-w-5xl rounded-lg border border-gray-300 p-6 shadow">
       <h2 className="mb-4 text-lg font-semibold text-gray-900">Create Invoice</h2>
+
+      {successMessage && (
+        <div className="mb-4 rounded-md border border-green-300 bg-green-50 px-4 py-2 text-sm text-green-700">
+          {successMessage}
+        </div>
+      )}
+
       <InvoiceForm
-        submitText="Create Invoice"
+        submitText={mutation.isPending ? "Creating..." : "Create Invoice"}
+        errorText={mutation.error?.message}
         onSubmit={async (data) => {
           await mutation.mutateAsync({ data });
         }}

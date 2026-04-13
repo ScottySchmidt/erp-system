@@ -48,6 +48,14 @@ function ListInvoicePage() {
   return (
     <DashboardLayout title="Invoices">
       <section className="flex flex-col gap-5">
+        <div className="flex items-center justify-end">
+          <Link
+            to="/invoice/new"
+            className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/25"
+          >
+            + New Invoice
+          </Link>
+        </div>
         <table className="table w-full">
           <thead>
             <tr>

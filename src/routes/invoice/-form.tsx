@@ -25,6 +25,7 @@ export interface InvoiceFormProps {
   errorText?: string;
   onSubmit: (data: v.InferInput<typeof DataSchema>) => Promise<void>;
   defaultValues: v.InferInput<typeof FormSchema>;
+  accounts?: { id: string; name: string }[];
 }
 
 type LineItem = {
@@ -127,14 +128,34 @@ export function InvoiceForm(props: InvoiceFormProps) {
           name="account_id"
           children={(field) => (
             <Field className="flex flex-col gap-1">
-              <Label>Account ID</Label>
-              <Input
-                name={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                className="rounded-md border border-gray-300 px-3 py-2"
-              />
+              <Label>Account</Label>
+              {props.accounts && props.accounts.length ? (
+                <select
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  className="rounded-md border border-gray-300 px-3 py-2"
+                >
+                  <option value="" disabled>
+                    Select an account
+                  </option>
+                  {props.accounts.map((acct) => (
+                    <option key={acct.id} value={acct.id}>
+                      {acct.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Input
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-2"
+                />
+              )}
               <FieldError meta={field.state.meta} />
             </Field>
           )}

@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
@@ -15,6 +15,7 @@ export const Route = createFileRoute("/invoice/new")({
   beforeLoad: async ({ context }) => {
     await redirectIfSignedOut(context);
   },
+  loader: () => listAccounts(),
 });
 
 const createInvoice = createServerFn()
@@ -36,28 +37,47 @@ const createInvoice = createServerFn()
     };
   });
 
+const listAccounts = createServerFn()
+  .middleware([DatabaseProvider, MustAuthenticate])
+  .handler(async ({ context }) => {
+    const accounts = await context.db
+      .select({
+        account_id: t.gl_accounts.account_id,
+        account_name: t.gl_accounts.account_name,
+      })
+      .from(t.gl_accounts);
+
+    return accounts;
+  });
+
 function NewInvoicePage() {
   const router = useRouter();
+  const accounts = Route.useLoaderData();
   const [successMessage, setSuccessMessage] = useState("");
 
   const mutation = useMutation({
     mutationFn: createInvoice,
-    onSuccess: async (data) => {
-      setSuccessMessage("Invoice created successfully!");
+    onSuccess: async () => {
+      setSuccessMessage("Invoice created successfully! Redirecting to invoices…");
 
-      setTimeout(async () => {
-        await router.invalidate();
-        await router.navigate({
-          to: "/invoice/$id",
-          params: { id: data.invoice_id },
-        });
-      }, 1000);
+      await router.invalidate();
+      await router.navigate({
+        to: "/invoice/",
+      });
     },
   });
 
   return (
     <div className="mx-auto my-8 max-w-5xl rounded-lg border border-gray-300 p-6 shadow">
-      <h2 className="mb-4 text-lg font-semibold text-gray-900">Create Invoice</h2>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-gray-900">Create Invoice</h2>
+        <Link
+          to="/invoice/"
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+        >
+          ← Back to invoices
+        </Link>
+      </div>
 
       {successMessage && (
         <div className="mb-4 rounded-md border border-green-300 bg-green-50 px-4 py-2 text-sm text-green-700">
@@ -72,11 +92,15 @@ function NewInvoicePage() {
           await mutation.mutateAsync({ data });
         }}
         defaultValues={{
-          account_id: "",
+          account_id: accounts?.[0]?.account_id ? String(accounts[0].account_id) : "",
           vendor_id: "",
           invoice_date: formatDate(new Date()),
           amount: "",
         }}
+        accounts={accounts?.map((acct) => ({
+          id: String(acct.account_id),
+          name: acct.account_name,
+        }))} // provide dropdown options
       />
     </div>
   );

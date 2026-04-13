@@ -167,7 +167,7 @@ function InvoicePage() {
         },
       });
       localStorage.removeItem("currentLineItems");
-      await navigate({ to: "/erp/dashboard" });
+      await navigate({ to: "/invoice/" });
     } catch (err) {
       const text = err instanceof Error ? err.message : "Failed to save invoice.";
       setError(text);

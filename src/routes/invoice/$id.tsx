@@ -3,6 +3,7 @@ import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { valibotValidator } from "@tanstack/valibot-adapter";
 import { and, eq } from "drizzle-orm";
+import { useState } from "react";
 import * as v from "valibot";
 
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
@@ -76,20 +77,32 @@ const updateInvoiceFn = createServerFn()
 function EditInvoicePage() {
   const router = useRouter();
   const invoice = Route.useLoaderData();
+  const [successMessage, setSuccessMessage] = useState("");
 
   const mutation = useMutation({
     mutationFn: updateInvoiceFn,
     onSuccess: async () => {
+      setSuccessMessage("Invoice updated successfully!");
       await router.invalidate();
+
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 1500);
     },
   });
 
   return (
-    <div className="mx-auto my-8 max-w-lg rounded-lg border border-gray-300 p-6 shadow">
+    <div className="mx-auto my-8 max-w-5xl rounded-lg border border-gray-300 p-6 shadow">
       <h2 className="mb-4 text-lg font-semibold text-gray-900">Edit Invoice</h2>
 
+      {successMessage && (
+        <div className="mb-4 rounded-md border border-green-300 bg-green-50 px-4 py-2 text-sm text-green-700">
+          {successMessage}
+        </div>
+      )}
+
       <InvoiceForm
-        submitText="Update Invoice"
+        submitText={mutation.isPending ? "Updating..." : "Update Invoice"}
         errorText={mutation.error?.message}
         onSubmit={async (data) => {
           const id = invoice.invoice_id;

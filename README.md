@@ -1,5 +1,5 @@
-ERP Accounting System
-Course: IT 426 – Advanced Software Engineering  Team:
+# ERP Accounting System
+Advanced Software Engineering  Team:
 Scott Schmidt, DaShawn Pfeifer, SeEun Chung, Suphanat Rojsiristith, Walter Zou
 
 MVC is Model-View-Controller which is a way to organize your code into 3 roles. 
@@ -14,8 +14,8 @@ Examples: mousePressed()
 Here is our diagram MVC image below:
 # Software Architecture Template (MVC + Layered / N-tier)
 
-ERP Accounting System
-Course: IT 426 – Advanced Software Engineering  Team:
+# ERP Accounting System
+Advanced Software Engineering  Team: 
 Scott Schmidt, DaShawn Pfeifer, SeEun Chung, Suphanat Rojsiristith, Walter Zou
 
 MVC is Model-View-Controller which is a way to organize your code into 3 roles. 

@@ -3,13 +3,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { DashboardLayout } from "#/components/layout/dashboard";
-import { redirectIfSignedOut } from "#/lib/auth";
+import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
-import { MustAuthenticate } from "#/lib/auth";
 
 export const Route = createFileRoute("/erp/vendor/new")({
   component: VendorInsertPage,

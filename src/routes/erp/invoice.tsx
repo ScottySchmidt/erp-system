@@ -36,13 +36,13 @@ const createInvoice = createServerFn()
     const inserted = await context.db
       .insert(t.invoices)
       .values({
-        user_id: context.auth.profile.user_id!,
+        user_id: context.auth.profile.user_id as any,
         account_id: data.account_id ?? 1,
         vendor_id: data.vendor_id,
         invoice_date: data.invoice_date,
         amount: data.amount,
         created_date: today(),
-      })
+      } as any)
       .returning({ invoice_id: t.invoices.invoice_id })
       .then((rows) => rows[0]);
 
@@ -167,7 +167,7 @@ function InvoicePage() {
         },
       });
       localStorage.removeItem("currentLineItems");
-      await navigate({ to: "/invoice/" });
+      await navigate({ to: "/invoice" });
     } catch (err) {
       const text = err instanceof Error ? err.message : "Failed to save invoice.";
       setError(text);

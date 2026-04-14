@@ -24,4 +24,15 @@ export default defineConfig({
     }),
     viteReact(),
   ].filter(Boolean),
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['@tanstack/react-router'],
+          supabase: ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
 });

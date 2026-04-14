@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { desc, eq } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 
 import { DashboardLayout } from "#/components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";

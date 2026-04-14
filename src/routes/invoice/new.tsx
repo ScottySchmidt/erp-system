@@ -62,7 +62,7 @@ function NewInvoicePage() {
 
       await router.invalidate();
       await router.navigate({
-        to: "/invoice/",
+        to: "/invoice",
       });
     },
   });
@@ -72,7 +72,7 @@ function NewInvoicePage() {
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-gray-900">Create Invoice</h2>
         <Link
-          to="/invoice/"
+          to="/invoice"
           className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
         >
           ← Back to invoices

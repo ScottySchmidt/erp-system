@@ -1,59 +1,60 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createServerFn } from "@tanstack/react-start";
+import { useMemo, useState } from "react";
+import { desc, eq } from "drizzle-orm";
+
+import { supabaseBrowser } from "#/lib/supabaseBrowser";
 
 import { DashboardLayout } from "#/components/layout/dashboard";
-import { supabaseBrowser } from "#/lib/supabaseBrowser";
+import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
+import { DatabaseProvider } from "#/lib/provider";
+import { t } from "#/lib/server/database";
+
+const getDashboardData = createServerFn()
+  .middleware([DatabaseProvider, MustAuthenticate])
+  .handler(async ({ context }) => {
+    const invoices = await context.db
+      .select()
+      .from(t.invoices)
+      .where(eq(t.invoices.user_id, context.auth.profile.user_id))
+      .orderBy(desc(t.invoices.invoice_id));
+
+    const vendors = await context.db
+      .select()
+      .from(t.vendor)
+      .orderBy(desc(t.vendor.vendor_id));
+
+    return { invoices, vendors };
+  });
 
 export const Route = createFileRoute("/erp/dashboard")({
   component: Dashboard,
+  beforeLoad: async ({ context }) => {
+    await redirectIfSignedOut(context);
+  },
+  loader: () => getDashboardData(),
 });
 
 type Invoice = Record<string, any>;
-type Customer = Record<string, any>;
+type Vendor = Record<string, any>;
 
 function Dashboard() {
   const navigate = useNavigate();
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const loaderData = Route.useLoaderData() as {
+    invoices: Invoice[];
+    vendors: Vendor[];
+  };
+  const [invoices, setInvoices] = useState<Invoice[]>(loaderData.invoices);
+  const [vendors, setVendors] = useState<Vendor[]>(loaderData.vendors);
   const [showAllInvoices, setShowAllInvoices] = useState(false);
   const [updatingInvoiceId, setUpdatingInvoiceId] = useState<string | number | null>(null);
+  const loading = false;
 
-  useEffect(() => {
-    const user = sessionStorage.getItem("user");
-    if (!user) {
-      void navigate({ to: "/auth/login" });
-      return;
-    }
-    void loadData();
-  }, [navigate]);
-
-  async function loadData() {
-    setLoading(true);
-    try {
-      if (supabaseBrowser) {
-        const [invoiceRes, customerRes] = await Promise.all([
-          supabaseBrowser.from("invoices").select("*").order("created_at", { ascending: false }),
-          supabaseBrowser.from("customers").select("*"),
-        ]);
-
-        setInvoices(invoiceRes.data ?? []);
-        setCustomers(customerRes.data ?? []);
-      } else {
-        const localInvoices = JSON.parse(localStorage.getItem("erp_invoices") ?? "[]");
-        const localCustomers = JSON.parse(localStorage.getItem("erp_customers") ?? "[]");
-        setInvoices(localInvoices);
-        setCustomers(localCustomers);
-      }
-    } catch {
-      const localInvoices = JSON.parse(localStorage.getItem("erp_invoices") ?? "[]");
-      const localCustomers = JSON.parse(localStorage.getItem("erp_customers") ?? "[]");
-      setInvoices(localInvoices);
-      setCustomers(localCustomers);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const vendorMap = useMemo(() => {
+    const map = new Map<number, string>();
+    vendors.forEach((v) => map.set(v.vendor_id, v.vendor_name));
+    return map;
+  }, [vendors]);
 
   const stats = useMemo(() => {
     const totalInvoices = invoices.length;
@@ -63,7 +64,8 @@ function Dashboard() {
     );
     const paidInvoices = invoices.filter((inv) => (inv.status ?? "draft") === "paid").length;
     const conversionRate = totalInvoices ? Math.round((paidInvoices / totalInvoices) * 100) : 0;
-    return { totalInvoices, totalRevenue, paidInvoices, conversionRate };
+    const totalCustomers = new Set(invoices.map((inv) => inv.vendor_id).filter(Boolean)).size;
+    return { totalInvoices, totalRevenue, paidInvoices, conversionRate, totalCustomers };
   }, [invoices]);
 
   async function updateInvoiceStatus(invoice: Invoice, newStatus: string) {
@@ -111,13 +113,12 @@ function Dashboard() {
       export_date: new Date().toISOString(),
       summary: {
         total_invoices: invoices.length,
-        total_customers: customers.length,
+        total_customers: stats.totalCustomers,
         total_revenue: stats.totalRevenue,
         paid_invoices: stats.paidInvoices,
         conversion_rate: `${stats.conversionRate}%`,
       },
       invoices,
-      customers,
     };
 
     const dataStr = JSON.stringify(report, null, 2);
@@ -180,7 +181,7 @@ function Dashboard() {
             label="Revenue"
             value={`$${stats.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
           />
-          <StatCard label="Customers" value={customers.length.toString()} />
+          <StatCard label="Customers" value={stats.totalCustomers.toString()} />
           <StatCard label="Conversion" value={`${stats.conversionRate}%`} />
         </section>
 
@@ -232,7 +233,7 @@ function Dashboard() {
               </button>
               <button
                 className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
-                onClick={loadData}
+                onClick={() => window.location.reload()}
               >
                 Refresh
               </button>
@@ -303,7 +304,7 @@ function Dashboard() {
                         {invoice.invoice_number ?? invoice.invoice_id ?? "—"}
                       </td>
                       <td className="border-b border-white/5 px-3 py-2">
-                        {invoice.customer ?? invoice.vendor_id ?? "—"}
+                        {vendorMap.get(invoice.vendor_id) ?? "—"}
                       </td>
                       <td className="border-b border-white/5 px-3 py-2 text-slate-300">
                         {invoice.date

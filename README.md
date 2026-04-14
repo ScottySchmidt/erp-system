@@ -1,8 +1,171 @@
-Welcome to your new TanStack Start app!
+# Software Architecture Template (MVC + Layered / N-tier)
 
-# Getting Started
+ERP Accounting System
+Course: IT 426 – Advanced Software Engineering  Team:
+Scott Schmidt, DaShawn Pfeifer, SeEun Chung, Suphanat Rojsiristith, Walter Zou
 
-To run this application:
+MVC is Model-View-Controller which is a way to organize your code into 3 roles. 
+1. Model (Data) handles the database and data structure such as the tables users, invoices, and vendor.
+2. View (UI) is what the user sees such as forms and the dashboards.
+Example: Box Layout or Gidlayout 
+3. Controller connects the model and view. 
+Examples: mousePressed()
+
+
+## Architecture Diagram
+Here is our diagram MVC image below:
+# Software Architecture Template (MVC + Layered / N-tier)
+
+ERP Accounting System
+Course: IT 426 – Advanced Software Engineering  Team:
+Scott Schmidt, DaShawn Pfeifer, SeEun Chung, Suphanat Rojsiristith, Walter Zou
+
+MVC is Model-View-Controller which is a way to organize your code into 3 roles. 
+1. Model (Data) handles the database and data structure such as the tables users, invoices, and vendor.
+2. View (UI) is what the user sees such as forms and the dashboards.
+Example: Box Layout or Gidlayout 
+3. Controller connects the model and view. 
+Examples: mousePressed()
+
+
+## Architecture Diagram
+Here is our diagram MVC image below:
+# Software Architecture Template (MVC + Layered / N-tier)
+
+ERP Accounting System
+Course: IT 426 – Advanced Software Engineering  Team:
+Scott Schmidt, DaShawn Pfeifer, SeEun Chung, Suphanat Rojsiristith, Walter Zou
+
+MVC is Model-View-Controller which is a way to organize your code into 3 roles. 
+1. Model (Data) handles the database and data structure such as the tables users, invoices, and vendor.
+2. View (UI) is what the user sees such as forms and the dashboards.
+Example: Box Layout or Gidlayout 
+3. Controller connects the model and view. 
+Examples: mousePressed()
+
+
+## Architecture Diagram
+Here is our diagram MVC image below:
+# Software Architecture Template (MVC + Layered / N-tier)
+
+ERP Accounting System
+Course: IT 426 – Advanced Software Engineering  Team:
+Scott Schmidt, DaShawn Pfeifer, SeEun Chung, Suphanat Rojsiristith, Walter Zou
+
+MVC is Model-View-Controller which is a way to organize your code into 3 roles. 
+1. Model (Data) handles the database and data structure such as the tables users, invoices, and vendor.
+2. View (UI) is what the user sees such as forms and the dashboards.
+Example: Box Layout or Gidlayout 
+3. Controller connects the model and view. 
+Examples: mousePressed()
+
+
+## Architecture Diagram
+Here is our diagram MVC image below:
+# Software Architecture Template (MVC + Layered / N-tier)
+
+ERP Accounting System
+Course: IT 426 – Advanced Software Engineering  Team:
+Scott Schmidt, DaShawn Pfeifer, SeEun Chung, Suphanat Rojsiristith, Walter Zou
+
+MVC is Model-View-Controller which is a way to organize your code into 3 roles. 
+1. Model (Data) handles the database and data structure such as the tables users, invoices, and vendor.
+2. View (UI) is what the user sees such as forms and the dashboards.
+Example: Box Layout or Gidlayout 
+3. Controller connects the model and view. 
+Examples: mousePressed()
+
+
+## Architecture Diagram
+Here is our diagram MVC image below:
+# Software Architecture Template (MVC + Layered / N-tier)
+
+ERP Accounting System
+Course: IT 426 – Advanced Software Engineering  Team:
+Scott Schmidt, DaShawn Pfeifer, SeEun Chung, Suphanat Rojsiristith, Walter Zou
+
+MVC is Model-View-Controller which is a way to organize your code into 3 roles. 
+1. Model (Data) handles the database and data structure such as the tables users, invoices, and vendor.
+2. View (UI) is what the user sees such as forms and the dashboards.
+Example: Box Layout or Gidlayout 
+3. Controller connects the model and view. 
+Examples: mousePressed()
+
+
+## Architecture Diagram
+Here is our diagram MVC image below:
+# Software Architecture Template (MVC + Layered / N-tier)
+
+ERP Accounting System
+Course: IT 426 – Advanced Software Engineering  Team:
+Scott Schmidt, DaShawn Pfeifer, SeEun Chung, Suphanat Rojsiristith, Walter Zou
+
+MVC is Model-View-Controller which is a way to organize your code into 3 roles. 
+1. Model (Data) handles the database and data structure such as the tables users, invoices, and vendor.
+2. View (UI) is what the user sees such as forms and the dashboards.
+Example: Box Layout or Gidlayout 
+3. Controller connects the model and view. 
+Examples: mousePressed()
+
+
+## Architecture Diagram
+Here is our diagram MVC image below:
+![alt text](UML-ERP.png)
+
+
+## Data Flow Between Layers
+When a user interacts with the system (e.g., submits a form), the request starts in the Presentation Layer. The request is then passed to the Application Layer, where business logic and authentication are applied. The Application Layer communicates with the Data Layer to store or retrieve information from the database. The result is then returned back through the Application Layer to the Presentation Layer, where it is displayed to the user.
+
+## Layer 1: Presentation Layer
+
+-Component1: Index
+Example: Display main content of application
+- Component 2:  Header
+Examples: Logo, title, navigation
+- Component 3:  Navigation
+Examples: Menus and forms
+- Component 4:  Route Pages
+
+## Layer 2: Application Layer
+This is the “bain” of the application that contains business logic, rules, and actions:
+- Component 4: CreateInvoice
+- Component 5: CreateUser
+- Component 6: getVendors
+-Component 7: Login and Logout
+
+## Layer 3: Data Layer
+- Component 6: Supabase Database 
+Here are the tables, columns and connections in Supabase:
+
+![alt text](SupabaseERD.png)
+
+---
+
+## MVC Mapping
+
+- **View:** React UI components such as Dashboard, Login/Register pages, Vendor List page, Add Vendor form, and Invoice form
+- **Controller:** API routes and server functions including form handlers, authentication logic, and request processing
+- **Model:** Database models and schemas such as User, Vendor, and Invoice using Supabase
+
+---
+
+## Component Communication
+
+1.The invoice page sends form data (vendor, date, amount) to the createInvoice function.
+2. CreateInvoice checks the user and saves the invoice to the database.
+3.The database saves the invoice and sends the result back.
+4. The page shows success and redirects to the invoice list.
+
+---
+
+## Notes
+
+- Why this architecture fits the project: This architecture fits the project because it separates the user interface, business logic, and data management, making the ERP system easier to develop, test, and maintain.
+- Any limitations/future improvements: A limitation is that the system can become more complex as the project grows, so future improvements could include clearer service separation, stronger validation, and better scalability support.
+
+
+## Getting Started NPM 
+>>>>>>> Stashed changes
 
 ```bash
 npm install

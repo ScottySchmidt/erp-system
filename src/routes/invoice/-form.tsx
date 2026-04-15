@@ -8,14 +8,18 @@ import { IntStrSchema, MoneySchema } from "#/lib/validation";
 
 export const DataSchema = v.object({
   account_id: v.pipe(v.number(), v.integer()),
-  vendor_id: v.pipe(v.number(), v.integer()),
+  vendor_id: v.nullable(v.pipe(v.number(), v.integer())),
   invoice_date: v.string(),
   amount: MoneySchema,
 });
 
 export const FormSchema = v.object({
   account_id: v.pipe(IntStrSchema, DataSchema.entries.account_id),
-  vendor_id: v.pipe(IntStrSchema, DataSchema.entries.vendor_id),
+  vendor_id: v.pipe(
+    v.union([v.literal(""), IntStrSchema]),
+    v.transform((input) => (input === "" ? null : input)),
+    DataSchema.entries.vendor_id,
+  ),
   invoice_date: DataSchema.entries.invoice_date,
   amount: MoneySchema,
 });
@@ -26,6 +30,7 @@ export interface InvoiceFormProps {
   onSubmit: (data: v.InferInput<typeof DataSchema>) => Promise<void>;
   defaultValues: v.InferInput<typeof FormSchema>;
   accounts?: { id: string; name: string }[];
+  vendors?: { id: string; name: string }[];
 }
 
 type LineItem = {
@@ -333,19 +338,39 @@ export function InvoiceForm(props: InvoiceFormProps) {
           children={(field) => (
             <Field className="flex flex-col gap-1">
               <Label>Vendor ID</Label>
-              <Input
-                name={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => {
-                  setSubmitDebugMessage(null);
-                  field.handleChange(e.target.value);
-                }}
-                required
-                className="rounded-md border border-gray-300 px-3 py-2"
-              />
+              {props.vendors && props.vendors.length ? (
+                <select
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => {
+                    setSubmitDebugMessage(null);
+                    field.handleChange(e.target.value);
+                  }}
+                  className="rounded-md border border-gray-300 px-3 py-2"
+                >
+                  <option value="">No vendor (optional)</option>
+                  {props.vendors.map((vendor) => (
+                    <option key={vendor.id} value={vendor.id}>
+                      {vendor.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Input
+                  name={field.name}
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => {
+                    setSubmitDebugMessage(null);
+                    field.handleChange(e.target.value);
+                  }}
+                  placeholder="Optional vendor ID"
+                  className="rounded-md border border-gray-300 px-3 py-2"
+                />
+              )}
               <p className="text-xs text-gray-500">
-                Use an existing numeric vendor ID from the vendor table.
+                Optional. If set, it must match an existing vendor.
               </p>
               <FieldError meta={field.state.meta} />
             </Field>

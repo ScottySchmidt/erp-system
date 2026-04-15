@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { eq } from "drizzle-orm";
 import { useState } from "react";
 
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
@@ -22,15 +23,69 @@ const createInvoice = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
   .inputValidator(DataSchema)
   .handler(async ({ data, context }) => {
-    const invoice = await context.db
-      .insert(t.invoices)
-      .values({
-        ...data,
-        user_id: context.auth.profile.user_id,
-        created_date: formatDate(new Date()),
-      })
-      .returning()
-      .then((rows) => rows[0]);
+    const profileUserId = context.auth.profile.user_id;
+    const [userExists, accountExists, vendorExists] = await Promise.all([
+      context.db
+        .select({ user_id: t.users.user_id })
+        .from(t.users)
+        .where(eq(t.users.user_id, profileUserId))
+        .limit(1)
+        .then((rows) => rows[0]),
+      context.db
+        .select({ account_id: t.gl_accounts.account_id })
+        .from(t.gl_accounts)
+        .where(eq(t.gl_accounts.account_id, data.account_id))
+        .limit(1)
+        .then((rows) => rows[0]),
+      context.db
+        .select({ vendor_id: t.vendor.vendor_id })
+        .from(t.vendor)
+        .where(eq(t.vendor.vendor_id, data.vendor_id))
+        .limit(1)
+        .then((rows) => rows[0]),
+    ]);
+
+    if (!userExists) {
+      throw new Error(
+        `Invoice debug: authenticated user_id ${profileUserId} does not exist in users table.`,
+      );
+    }
+
+    if (!accountExists) {
+      throw new Error(
+        `Invoice debug: account_id ${data.account_id} was not found in gl_accounts.`,
+      );
+    }
+
+    if (!vendorExists) {
+      throw new Error(
+        `Invoice debug: vendor_id ${data.vendor_id} was not found in vendor table.`,
+      );
+    }
+
+    let invoice;
+    try {
+      invoice = await context.db
+        .insert(t.invoices)
+        .values({
+          ...data,
+          user_id: profileUserId,
+          created_date: formatDate(new Date()),
+        })
+        .returning()
+        .then((rows) => rows[0]);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Invoice insert failed (user_id=${profileUserId}, account_id=${data.account_id}, vendor_id=${data.vendor_id}, amount=${data.amount}, invoice_date=${data.invoice_date}). ${reason}`,
+      );
+    }
+
+    if (!invoice) {
+      throw new Error(
+        "Invoice insert failed: no invoice row was returned after insert.",
+      );
+    }
 
     return {
       invoice_id: invoice.invoice_id,

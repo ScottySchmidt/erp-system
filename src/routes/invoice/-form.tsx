@@ -84,6 +84,10 @@ function formatMoneyInput(value: string): string {
   return (cents / 100).toFixed(2);
 }
 
+function formatCurrency(value: number): string {
+  return `$${value.toFixed(2)}`;
+}
+
 function getLineItemErrors(item: LineItem): string[] {
   const errors: string[] = [];
 
@@ -178,9 +182,7 @@ export function InvoiceForm(props: InvoiceFormProps) {
 
       if (amountCents !== calculatedTotalCents) {
         setSubmitDebugMessage(
-          `Total Amount $${(amountCents / 100).toFixed(2)} must match calculated total $${(
-            calculatedTotalCents / 100
-          ).toFixed(2)}.`,
+          `Total Amount ${formatCurrency(amountCents / 100)} must match calculated total ${formatCurrency(calculatedTotalCents / 100)}.`,
         );
         return;
       }
@@ -356,8 +358,8 @@ export function InvoiceForm(props: InvoiceFormProps) {
                 </p>
                 {isAmountMismatch && (
                   <p className="text-xs text-red-600">
-                    Entered total does not match line-item total of $
-                    {totals.total.toFixed(2)}.
+                    Entered total does not match line-item total of{" "}
+                    {formatCurrency(totals.total)}.
                   </p>
                 )}
                 <FieldError meta={field.state.meta} />
@@ -425,16 +427,21 @@ export function InvoiceForm(props: InvoiceFormProps) {
                   </td>
 
                   <td className="px-3 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={item.price}
-                      onChange={(e) =>
-                        updateRow(item.id, "price", e.target.value)
-                      }
-                      className="w-full rounded-md border border-gray-300 px-2 py-2"
-                    />
+                    <div className="relative">
+                      <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-gray-500">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={item.price}
+                        onChange={(e) =>
+                          updateRow(item.id, "price", e.target.value)
+                        }
+                        className="w-full rounded-md border border-gray-300 py-2 pr-2 pl-7"
+                      />
+                    </div>
                   </td>
 
                   <td className="px-3 py-2">
@@ -452,12 +459,9 @@ export function InvoiceForm(props: InvoiceFormProps) {
                   </td>
 
                   <td className="px-3 py-2 font-medium">
-                    $
-                    {(
-                      item.quantity *
-                      item.price *
-                      (1 + item.tax_rate / 100)
-                    ).toFixed(2)}
+                    {formatCurrency(
+                      item.quantity * item.price * (1 + item.tax_rate / 100),
+                    )}
                   </td>
 
                   <td className="px-3 py-2 text-right">
@@ -478,15 +482,15 @@ export function InvoiceForm(props: InvoiceFormProps) {
         <div className="mt-4 ml-auto w-full max-w-xs space-y-1 text-sm">
           <div className="flex justify-between">
             <span>Subtotal</span>
-            <span>${totals.subtotal.toFixed(2)}</span>
+            <span>{formatCurrency(totals.subtotal)}</span>
           </div>
           <div className="flex justify-between">
             <span>Tax</span>
-            <span>${totals.tax.toFixed(2)}</span>
+            <span>{formatCurrency(totals.tax)}</span>
           </div>
           <div className="flex justify-between border-t pt-2 text-base font-semibold">
             <span>Total</span>
-            <span>${totals.total.toFixed(2)}</span>
+            <span>{formatCurrency(totals.total)}</span>
           </div>
         </div>
 

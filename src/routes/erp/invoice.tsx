@@ -7,6 +7,7 @@ import { supabaseBrowser } from "#/lib/supabaseBrowser";
 import { DatabaseProvider } from "#/lib/provider";
 import { MustAuthenticate } from "#/lib/auth";
 import {
+  assertInvoiceReferencesExist,
   getDatabaseErrorReason,
   insertInvoiceWithInvoiceIdFallback,
 } from "#/lib/server/database/invoices";
@@ -36,11 +37,20 @@ const createInvoice = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
   .inputValidator(InvoiceCreateSchema)
   .handler(async ({ data, context }) => {
+    const userId = context.auth.profile.user_id as number;
+    const accountId = data.account_id ?? 1;
+
+    await assertInvoiceReferencesExist(context.db, {
+      user_id: userId,
+      account_id: accountId,
+      vendor_id: data.vendor_id,
+    });
+
     let inserted;
     try {
       inserted = await insertInvoiceWithInvoiceIdFallback(context.db, {
-        user_id: context.auth.profile.user_id as any,
-        account_id: data.account_id ?? 1,
+        user_id: userId,
+        account_id: accountId,
         vendor_id: data.vendor_id,
         invoice_date: data.invoice_date,
         amount: data.amount as any,
@@ -49,7 +59,7 @@ const createInvoice = createServerFn()
     } catch (error) {
       const reason = getDatabaseErrorReason(error);
       throw new Error(
-        `Failed to create invoice (user_id=${context.auth.profile.user_id}, account_id=${data.account_id ?? 1}, vendor_id=${data.vendor_id}, amount=${data.amount}, invoice_date=${data.invoice_date}). ${reason}`,
+        `Failed to create invoice (user_id=${userId}, account_id=${accountId}, vendor_id=${data.vendor_id}, amount=${data.amount}, invoice_date=${data.invoice_date}). ${reason}`,
       );
     }
 

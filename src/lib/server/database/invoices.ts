@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 import { t, type DrizzleClient } from "#/lib/server/database";
 
@@ -44,11 +44,17 @@ function collectErrorMessages(error: unknown): string[] {
         hint?: unknown;
         code?: unknown;
         cause?: unknown;
+        column?: unknown;
+        constraint?: unknown;
+        table?: unknown;
       };
       appendMessage(messages, record.message);
       appendMessage(messages, record.detail);
       appendMessage(messages, record.hint);
       appendMessage(messages, record.code);
+      appendMessage(messages, record.column);
+      appendMessage(messages, record.constraint);
+      appendMessage(messages, record.table);
       if (record.cause) {
         queue.push(record.cause);
       }
@@ -73,13 +79,73 @@ function shouldRetryWithManualInvoiceId(reason: string) {
     return false;
   }
 
-  return (
+  const missingDefaultOrIdentity =
     normalized.includes("null value") ||
     normalized.includes("not-null constraint") ||
     normalized.includes("no default") ||
     normalized.includes("default value") ||
-    normalized.includes("identity")
+    normalized.includes("identity");
+
+  if (missingDefaultOrIdentity) {
+    return true;
+  }
+
+  // Handle sequence drift where DEFAULT emits an existing invoice_id value.
+  return (
+    normalized.includes("duplicate key") ||
+    normalized.includes("already exists") ||
+    normalized.includes("unique constraint") ||
+    normalized.includes("23505")
   );
+}
+
+export async function assertInvoiceReferencesExist(
+  db: DrizzleClient,
+  values: Pick<InvoiceInsertValues, "user_id" | "account_id" | "vendor_id">,
+) {
+  const vendorLookupPromise =
+    values.vendor_id == null
+      ? Promise.resolve(undefined)
+      : db
+          .select({ vendor_id: t.vendor.vendor_id })
+          .from(t.vendor)
+          .where(eq(t.vendor.vendor_id, values.vendor_id))
+          .limit(1)
+          .then((rows) => rows[0]);
+
+  const [userExists, accountExists, vendorExists] = await Promise.all([
+    db
+      .select({ user_id: t.users.user_id })
+      .from(t.users)
+      .where(eq(t.users.user_id, values.user_id))
+      .limit(1)
+      .then((rows) => rows[0]),
+    db
+      .select({ account_id: t.gl_accounts.account_id })
+      .from(t.gl_accounts)
+      .where(eq(t.gl_accounts.account_id, values.account_id))
+      .limit(1)
+      .then((rows) => rows[0]),
+    vendorLookupPromise,
+  ]);
+
+  if (!userExists) {
+    throw new Error(
+      `Invoice debug: authenticated user_id ${values.user_id} does not exist in users table.`,
+    );
+  }
+
+  if (!accountExists) {
+    throw new Error(
+      `Invoice debug: account_id ${values.account_id} was not found in gl_accounts.`,
+    );
+  }
+
+  if (values.vendor_id != null && !vendorExists) {
+    throw new Error(
+      `Invoice debug: vendor_id ${values.vendor_id} was not found in vendor table.`,
+    );
+  }
 }
 
 async function runInsert(db: DrizzleClient, values: InvoiceInsertValues) {

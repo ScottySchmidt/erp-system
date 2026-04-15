@@ -1,13 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { eq } from "drizzle-orm";
 import { useState } from "react";
 
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
 import {
+  assertInvoiceReferencesExist,
   getDatabaseErrorReason,
   insertInvoiceWithInvoiceIdFallback,
 } from "#/lib/server/database/invoices";
@@ -28,44 +28,11 @@ const createInvoice = createServerFn()
   .inputValidator(DataSchema)
   .handler(async ({ data, context }) => {
     const profileUserId = context.auth.profile.user_id;
-    const [userExists, accountExists, vendorExists] = await Promise.all([
-      context.db
-        .select({ user_id: t.users.user_id })
-        .from(t.users)
-        .where(eq(t.users.user_id, profileUserId))
-        .limit(1)
-        .then((rows) => rows[0]),
-      context.db
-        .select({ account_id: t.gl_accounts.account_id })
-        .from(t.gl_accounts)
-        .where(eq(t.gl_accounts.account_id, data.account_id))
-        .limit(1)
-        .then((rows) => rows[0]),
-      context.db
-        .select({ vendor_id: t.vendor.vendor_id })
-        .from(t.vendor)
-        .where(eq(t.vendor.vendor_id, data.vendor_id))
-        .limit(1)
-        .then((rows) => rows[0]),
-    ]);
-
-    if (!userExists) {
-      throw new Error(
-        `Invoice debug: authenticated user_id ${profileUserId} does not exist in users table.`,
-      );
-    }
-
-    if (!accountExists) {
-      throw new Error(
-        `Invoice debug: account_id ${data.account_id} was not found in gl_accounts.`,
-      );
-    }
-
-    if (!vendorExists) {
-      throw new Error(
-        `Invoice debug: vendor_id ${data.vendor_id} was not found in vendor table.`,
-      );
-    }
+    await assertInvoiceReferencesExist(context.db, {
+      user_id: profileUserId,
+      account_id: data.account_id,
+      vendor_id: data.vendor_id,
+    });
 
     let invoice;
     try {

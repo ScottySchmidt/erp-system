@@ -109,6 +109,7 @@ function getLineItemErrors(item: LineItem): string[] {
 export function InvoiceForm(props: InvoiceFormProps) {
   const [lineItems, setLineItems] = useState<LineItem[]>([createEmptyLineItem()]);
   const [submitDebugMessage, setSubmitDebugMessage] = useState<string | null>(null);
+  const [priceInputsById, setPriceInputsById] = useState<Record<string, string>>({});
 
   const totals = useMemo(() => {
     const subtotal = lineItems.reduce(
@@ -191,7 +192,12 @@ export function InvoiceForm(props: InvoiceFormProps) {
 
   function addRow() {
     setSubmitDebugMessage(null);
-    setLineItems((prev) => [...prev, createEmptyLineItem()]);
+    const nextItem = createEmptyLineItem();
+    setLineItems((prev) => [...prev, nextItem]);
+    setPriceInputsById((prev) => ({
+      ...prev,
+      [nextItem.id]: "0.00",
+    }));
   }
 
   function deleteRow(id: string) {
@@ -199,6 +205,11 @@ export function InvoiceForm(props: InvoiceFormProps) {
     setLineItems((prev) => {
       const filtered = prev.filter((item) => item.id !== id);
       return filtered.length ? filtered : [createEmptyLineItem()];
+    });
+    setPriceInputsById((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
     });
   }
 
@@ -213,6 +224,51 @@ export function InvoiceForm(props: InvoiceFormProps) {
                 field === "description"
                   ? value
                   : Math.max(0, Number(value) || 0),
+            }
+          : item,
+      ),
+    );
+  }
+
+  function updatePriceRow(id: string, value: string) {
+    setSubmitDebugMessage(null);
+    const sanitizedValue = sanitizeMoneyInput(value);
+    const cents = toCents(sanitizedValue);
+
+    setPriceInputsById((prev) => ({
+      ...prev,
+      [id]: sanitizedValue,
+    }));
+
+    setLineItems((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              price: cents === null ? 0 : cents / 100,
+            }
+          : item,
+      ),
+    );
+  }
+
+  function blurPriceRow(id: string) {
+    setSubmitDebugMessage(null);
+    const rawValue = priceInputsById[id] ?? "0";
+    const formattedValue = formatMoneyInput(rawValue === "" ? "0" : rawValue);
+    const cents = toCents(formattedValue) ?? 0;
+
+    setPriceInputsById((prev) => ({
+      ...prev,
+      [id]: formattedValue,
+    }));
+
+    setLineItems((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              price: cents / 100,
             }
           : item,
       ),
@@ -425,16 +481,23 @@ export function InvoiceForm(props: InvoiceFormProps) {
                   </td>
 
                   <td className="px-3 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={item.price}
-                      onChange={(e) =>
-                        updateRow(item.id, "price", e.target.value)
-                      }
-                      className="w-full rounded-md border border-gray-300 px-2 py-2"
-                    />
+                    <div className="relative">
+                      <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-gray-500">
+                        $
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={
+                          priceInputsById[item.id] ??
+                          formatMoneyInput(String(item.price))
+                        }
+                        onBlur={() => blurPriceRow(item.id)}
+                        onChange={(e) => updatePriceRow(item.id, e.target.value)}
+                        placeholder="0.00"
+                        className="w-full rounded-md border border-gray-300 py-2 pr-2 pl-7"
+                      />
+                    </div>
                   </td>
 
                   <td className="px-3 py-2">

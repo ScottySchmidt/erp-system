@@ -1,6 +1,6 @@
 import { Field, Input, Label } from "@headlessui/react";
 import { useForm } from "@tanstack/react-form";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import * as v from "valibot";
 
 import { FieldError } from "#/components/form";
@@ -46,6 +46,16 @@ function createEmptyLineItem(): LineItem {
   };
 }
 
+function toCents(value: string | number | null | undefined): number | null {
+  const numericValue = typeof value === "number" ? value : Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return null;
+  }
+
+  return Math.round(numericValue * 100);
+}
+
 export function InvoiceForm(props: InvoiceFormProps) {
   const [lineItems, setLineItems] = useState<LineItem[]>([createEmptyLineItem()]);
 
@@ -65,6 +75,8 @@ export function InvoiceForm(props: InvoiceFormProps) {
     return { subtotal, tax, total };
   }, [lineItems]);
 
+  const calculatedTotalCents = useMemo(() => toCents(totals.total) ?? 0, [totals.total]);
+
   const form = useForm({
     defaultValues: {
       ...props.defaultValues,
@@ -79,13 +91,15 @@ export function InvoiceForm(props: InvoiceFormProps) {
     },
     onSubmit: async ({ value }) => {
       const data = v.parse(FormSchema, value);
+
+      const amountCents = toCents(data.amount);
+      if (amountCents === null || amountCents !== calculatedTotalCents) {
+        return;
+      }
+
       await props.onSubmit(data);
     },
   });
-
-  useEffect(() => {
-    form.setFieldValue("amount", totals.total.toFixed(2));
-  }, [totals.total, form]);
 
   function addRow() {
     setLineItems((prev) => [...prev, createEmptyLineItem()]);
@@ -200,26 +214,38 @@ export function InvoiceForm(props: InvoiceFormProps) {
 
         <form.Field
           name="amount"
-          children={(field) => (
-            <Field className="flex flex-col gap-1">
-              <Label>Total Amount</Label>
-              <Input
-                name={field.name}
-                type="number"
-                step="0.01"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                required
-                readOnly
-                className="rounded-md border border-gray-300 bg-gray-100 px-3 py-2"
-              />
-              <p className="text-xs text-gray-500">
-                This value is automatically calculated from the line items below.
-              </p>
-              <FieldError meta={field.state.meta} />
-            </Field>
-          )}
+          children={(field) => {
+            const amountCents = toCents(field.state.value);
+            const isAmountMismatch =
+              amountCents !== null && amountCents !== calculatedTotalCents;
+
+            return (
+              <Field className="flex flex-col gap-1">
+                <Label>Total Amount</Label>
+                <Input
+                  name={field.name}
+                  type="number"
+                  step="0.01"
+                  value={field.state.value}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  required
+                  className="rounded-md border border-gray-300 px-3 py-2"
+                />
+                <p className="text-xs text-gray-500">
+                  Enter the invoice total. It must match the calculated total from the
+                  line items below.
+                </p>
+                {isAmountMismatch && (
+                  <p className="text-xs text-red-600">
+                    Entered total does not match line-item total of $
+                    {totals.total.toFixed(2)}.
+                  </p>
+                )}
+                <FieldError meta={field.state.meta} />
+              </Field>
+            );
+          }}
         />
       </div>
 
@@ -343,16 +369,24 @@ export function InvoiceForm(props: InvoiceFormProps) {
       {props.errorText && <div className="text-sm text-red-600">{props.errorText}</div>}
 
       <form.Subscribe
-        selector={(state) => [state.canSubmit, state.isSubmitting]}
-        children={([canSubmit, isSubmitting]) => (
-          <button
-            type="submit"
-            disabled={!canSubmit || isSubmitting}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {isSubmitting ? "Submitting..." : props.submitText}
-          </button>
-        )}
+        selector={(state) =>
+          [state.canSubmit, state.isSubmitting, state.values.amount] as const
+        }
+        children={([canSubmit, isSubmitting, amount]) => {
+          const amountCents = toCents(amount);
+          const isAmountMismatch =
+            amountCents === null || amountCents !== calculatedTotalCents;
+
+          return (
+            <button
+              type="submit"
+              disabled={!canSubmit || isSubmitting || isAmountMismatch}
+              className="rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {isSubmitting ? "Submitting..." : props.submitText}
+            </button>
+          );
+        }}
       />
     </form>
   );

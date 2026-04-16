@@ -9,6 +9,49 @@ import { DatabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
 import { IntStrSchema } from "#/lib/validation";
 
+type CsvInvoiceRow = {
+  invoice_id: number;
+  account_id: number;
+  vendor_id: number | null;
+  invoice_date: string;
+  amount: string;
+};
+
+function escapeCsvValue(value: string | number | null): string {
+  if (value === null) {
+    return "";
+  }
+
+  const text = String(value);
+  if (/[",\n]/.test(text)) {
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+
+  return text;
+}
+
+function downloadInvoicesCsv(invoices: CsvInvoiceRow[]) {
+  const header = ["Invoice ID", "Account ID", "Vendor ID", "Date", "Amount"];
+  const rows = invoices.map((invoice) => [
+    escapeCsvValue(invoice.invoice_id),
+    escapeCsvValue(invoice.account_id),
+    escapeCsvValue(invoice.vendor_id),
+    escapeCsvValue(invoice.invoice_date),
+    escapeCsvValue(invoice.amount),
+  ]);
+
+  const csv = [header, ...rows].map((row) => row.join(",")).join("\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `invoices-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 const RouteSearchSchema = v.object({
   page: v.pipe(v.optional(IntStrSchema, "1"), v.integer()),
   pageSize: v.pipe(v.optional(IntStrSchema, "20"), v.integer()),
@@ -68,15 +111,38 @@ function ListInvoicePage() {
             <div className="text-sm text-slate-400">
               Total invoices: <span className="font-semibold">{totalCount}</span>
               <span className="mx-2">•</span>
-              Total amount: <span className="font-semibold">${totalAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              Total amount:{" "}
+              <span className="font-semibold">
+                ${totalAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              </span>
             </div>
           </div>
-          <Link
-            to="/invoice/new"
-            className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/25"
-          >
-            + New Invoice
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                downloadInvoicesCsv(
+                  invoices.map((invoice) => ({
+                    invoice_id: invoice.invoice_id,
+                    account_id: invoice.account_id,
+                    vendor_id: invoice.vendor_id,
+                    invoice_date: invoice.invoice_date,
+                    amount: String(invoice.amount),
+                  })),
+                )
+              }
+              disabled={invoices.length === 0}
+              className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/25 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Export CSV
+            </button>
+            <Link
+              to="/invoice/new"
+              className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/25"
+            >
+              + New Invoice
+            </Link>
+          </div>
         </div>
         <table className="table w-full">
           <thead>

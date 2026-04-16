@@ -112,7 +112,7 @@ function EditInvoicePage() {
         }}
         defaultValues={{
           account_id: String(invoice.account_id),
-          vendor_id: String(invoice.vendor_id),
+          vendor_id: invoice.vendor_id === null ? "" : String(invoice.vendor_id),
           invoice_date: formatDate(new Date(invoice.invoice_date)),
           amount: String(invoice.amount),
         }}

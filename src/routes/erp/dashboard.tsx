@@ -44,8 +44,8 @@ function Dashboard() {
     invoices: Invoice[];
     vendors: Vendor[];
   };
-  const [invoices, setInvoices] = useState<Invoice[]>(loaderData.invoices);
-  const [vendors, setVendors] = useState<Vendor[]>(loaderData.vendors);
+  const [invoices, _setInvoices] = useState<Invoice[]>(loaderData.invoices);
+  const [vendors, _setVendors] = useState<Vendor[]>(loaderData.vendors);
   const [showAllInvoices, setShowAllInvoices] = useState(false);
   const [updatingInvoiceId, setUpdatingInvoiceId] = useState<string | number | null>(null);
   const loading = false;

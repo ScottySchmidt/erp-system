@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TestRouteImport } from './routes/test'
+import { Route as NewVoucherRouteImport } from './routes/new-voucher'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AccountsRouteImport } from './routes/accounts'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as InvoiceIndexRouteImport } from './routes/invoice/index'
@@ -31,9 +33,19 @@ const TestRoute = TestRouteImport.update({
   path: '/test',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NewVoucherRoute = NewVoucherRouteImport.update({
+  id: '/new-voucher',
+  path: '/new-voucher',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountsRoute = AccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -109,7 +121,9 @@ const AuthPasswordForgotRoute = AuthPasswordForgotRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/dashboard': typeof DashboardRoute
+  '/new-voucher': typeof NewVoucherRoute
   '/test': typeof TestRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -127,7 +141,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/dashboard': typeof DashboardRoute
+  '/new-voucher': typeof NewVoucherRoute
   '/test': typeof TestRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -146,7 +162,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/accounts': typeof AccountsRoute
   '/dashboard': typeof DashboardRoute
+  '/new-voucher': typeof NewVoucherRoute
   '/test': typeof TestRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
@@ -166,7 +184,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/accounts'
     | '/dashboard'
+    | '/new-voucher'
     | '/test'
     | '/auth/login'
     | '/auth/register'
@@ -184,7 +204,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/accounts'
     | '/dashboard'
+    | '/new-voucher'
     | '/test'
     | '/auth/login'
     | '/auth/register'
@@ -202,7 +224,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/accounts'
     | '/dashboard'
+    | '/new-voucher'
     | '/test'
     | '/auth/login'
     | '/auth/register'
@@ -221,7 +245,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountsRoute: typeof AccountsRoute
   DashboardRoute: typeof DashboardRoute
+  NewVoucherRoute: typeof NewVoucherRoute
   TestRoute: typeof TestRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
@@ -247,11 +273,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/new-voucher': {
+      id: '/new-voucher'
+      path: '/new-voucher'
+      fullPath: '/new-voucher'
+      preLoaderRoute: typeof NewVoucherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/accounts': {
+      id: '/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AccountsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -357,7 +397,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountsRoute: AccountsRoute,
   DashboardRoute: DashboardRoute,
+  NewVoucherRoute: NewVoucherRoute,
   TestRoute: TestRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,

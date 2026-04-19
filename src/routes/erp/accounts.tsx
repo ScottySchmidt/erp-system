@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { eq, desc } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 
 import { DashboardLayout } from "#/components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
@@ -22,45 +22,66 @@ type Invoice = {
   vendor_name: string | null;
 };
 
-const ACCOUNTS: Account[] = [
-  { account_id: 1000, account_description: "Cash" },
-  { account_id: 1100, account_description: "Accounts Receivable" },
-  { account_id: 2000, account_description: "Accounts Payable" },
-  { account_id: 4000, account_description: "Revenue" },
-  { account_id: 5000, account_description: "Office Supplies" },
-  { account_id: 5100, account_description: "Professional Services" },
-  { account_id: 5200, account_description: "Utilities" },
-  { account_id: 5300, account_description: "Travel & Entertainment" },
-  { account_id: 6000, account_description: "Depreciation" },
-];
+type UserRow = {
+  user_id: number;
+  full_name: string;
+  email: string;
+  role_id: number | null;
+  dept_id: number | null;
+  created_at: string;
+};
 
-const getUserInvoices = createServerFn()
+const getAccountsPageData = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
   .handler(async ({ context }) => {
     try {
       if (!context.auth.profile?.user_id) {
-        console.error('Profile or user_id is missing:', context.auth.profile);
-        return [];
+        console.error("Profile or user_id is missing:", context.auth.profile);
+        return { invoices: [], accounts: [], users: [] };
       }
-      
-      const invoices = await context.db
-        .select({
-          invoice_id: t.invoices.invoice_id,
-          account_id: t.invoices.account_id,
-          vendor_id: t.invoices.vendor_id,
-          invoice_date: t.invoices.invoice_date,
-          amount: t.invoices.amount,
-          vendor_name: t.vendor.vendor_name,
-        })
-        .from(t.invoices)
-        .leftJoin(t.vendor, eq(t.invoices.vendor_id, t.vendor.vendor_id))
-        .where(eq(t.invoices.user_id, context.auth.profile.user_id))
-        .orderBy(desc(t.invoices.invoice_id));
 
-      return invoices || [];
+      const [invoices, accounts, users] = await Promise.all([
+        context.db
+          .select({
+            invoice_id: t.invoices.invoice_id,
+            account_id: t.invoices.account_id,
+            vendor_id: t.invoices.vendor_id,
+            invoice_date: t.invoices.invoice_date,
+            amount: t.invoices.amount,
+            vendor_name: t.vendor.vendor_name,
+          })
+          .from(t.invoices)
+          .leftJoin(t.vendor, eq(t.invoices.vendor_id, t.vendor.vendor_id))
+          .where(eq(t.invoices.user_id, context.auth.profile.user_id))
+          .orderBy(desc(t.invoices.invoice_id)),
+        context.db
+          .select({
+            account_id: t.gl_accounts.account_id,
+            account_description: t.gl_accounts.account_name,
+          })
+          .from(t.gl_accounts)
+          .orderBy(asc(t.gl_accounts.account_id)),
+        context.db
+          .select({
+            user_id: t.users.user_id,
+            full_name: t.users.full_name,
+            email: t.users.email,
+            role_id: t.users.role_id,
+            dept_id: t.users.dept_id,
+            created_at: t.users.created_at,
+          })
+          .from(t.users)
+          .orderBy(desc(t.users.created_at)),
+      ]);
+
+      return {
+        invoices: invoices ?? [],
+        accounts: accounts ?? [],
+        users: users ?? [],
+      };
     } catch (error) {
-      console.error('Error loading invoices:', error);
-      return [];
+      console.error("Error loading accounts page data:", error);
+      return { invoices: [], accounts: [], users: [] };
     }
   });
 
@@ -69,37 +90,33 @@ export const Route = createFileRoute("/erp/accounts")({
   beforeLoad: async ({ context }) => {
     await redirectIfSignedOut(context);
   },
-  loader: () => getUserInvoices(),
+  loader: () => getAccountsPageData(),
 });
 
 function AccountsPage() {
-  const invoices = Route.useLoaderData() as Invoice[];
-  
-  // Add error handling for missing data
-  if (!invoices) {
-    return (
-      <DashboardLayout title="Accounts">
-        <div className="text-center text-slate-400">
-          Loading accounts data...
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const loaderData = Route.useLoaderData() as {
+    invoices: Invoice[];
+    accounts: Account[];
+    users: UserRow[];
+  };
+  const invoices = loaderData.invoices ?? [];
+  const accounts = loaderData.accounts ?? [];
+  const users = loaderData.users ?? [];
   const [search, setSearch] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
 
   const filteredAccounts = useMemo(
     () =>
-      ACCOUNTS.filter((account) =>
+      accounts.filter((account) =>
         account.account_description.toLowerCase().includes(search.toLowerCase()),
       ),
-    [search],
+    [accounts, search],
   );
 
   const selectedAccount = useMemo(
     () =>
-      ACCOUNTS.find((account) => account.account_id === selectedAccountId) ?? null,
-    [selectedAccountId],
+      accounts.find((account) => account.account_id === selectedAccountId) ?? null,
+    [accounts, selectedAccountId],
   );
 
   const visibleInvoices = useMemo(
@@ -222,6 +239,50 @@ function AccountsPage() {
           {visibleInvoices.length === 0 && (
             <div className="mt-4 rounded-2xl border border-dashed border-slate-700 bg-slate-950/50 p-5 text-slate-400">
               No invoices found for the selected account.
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold">Users</h3>
+            <p className="text-sm text-slate-400">
+              Showing all users from the Supabase <code>users</code> table.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-700 text-sm">
+              <thead className="bg-slate-950/80 text-slate-400">
+                <tr>
+                  <th className="px-4 py-3 text-left font-medium uppercase tracking-[0.08em]">User ID</th>
+                  <th className="px-4 py-3 text-left font-medium uppercase tracking-[0.08em]">Name</th>
+                  <th className="px-4 py-3 text-left font-medium uppercase tracking-[0.08em]">Email</th>
+                  <th className="px-4 py-3 text-left font-medium uppercase tracking-[0.08em]">Role ID</th>
+                  <th className="px-4 py-3 text-left font-medium uppercase tracking-[0.08em]">Dept ID</th>
+                  <th className="px-4 py-3 text-left font-medium uppercase tracking-[0.08em]">Created</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700">
+                {users.map((user) => (
+                  <tr key={user.user_id} className="bg-slate-950/40 hover:bg-slate-900">
+                    <td className="px-4 py-3 text-slate-100">{user.user_id}</td>
+                    <td className="px-4 py-3 text-slate-200">{user.full_name}</td>
+                    <td className="px-4 py-3 text-slate-300">{user.email}</td>
+                    <td className="px-4 py-3 text-slate-300">{user.role_id ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-300">{user.dept_id ?? "—"}</td>
+                    <td className="px-4 py-3 text-slate-300">
+                      {new Date(user.created_at).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {users.length === 0 && (
+            <div className="mt-4 rounded-2xl border border-dashed border-slate-700 bg-slate-950/50 p-5 text-slate-400">
+              No users found.
             </div>
           )}
         </div>

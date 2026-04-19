@@ -4,6 +4,7 @@
     "target": "ES2022",
     "jsx": "react-jsx",
     "module": "ESNext",
+    "baseUrl": ".",
     "paths": {
       "#/*": ["./src/*"],
     },
@@ -11,13 +12,15 @@
     "types": ["./worker-configuration.d.ts", "node", "vite/client"],
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,
 
     /* Linting */
     "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

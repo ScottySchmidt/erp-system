@@ -89,7 +89,7 @@ function Dashboard() {
         localStorage.setItem("erp_invoices", JSON.stringify(updated));
       }
 
-      setInvoices((prev) =>
+      _setInvoices((prev) =>
         prev.map((inv) => {
           const curr = inv.id ?? inv.invoice_id ?? inv.invoice_number;
           return curr === invoiceId ? { ...inv, status: newStatus } : inv;
@@ -195,12 +195,6 @@ function Dashboard() {
                   {invoices.filter((i) => i.status === "paid").length}
                 </span>
               </li>
-              <li className="flex items-center justify-between border-b border-white/5 pb-2">
-                <span>Sent</span>
-                <span className="font-semibold">
-                  {invoices.filter((i) => i.status === "sent").length}
-                </span>
-              </li>
               <li className="flex items-center justify-between">
                 <span>Draft</span>
                 <span className="font-semibold">
@@ -224,6 +218,18 @@ function Dashboard() {
                 onClick={() => navigate({ to: "/erp/vendor/new" })}
               >
                 New Vendor
+              </button>
+              <button
+                className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
+                onClick={() => navigate({ to: "/erp/accounts" })}
+              >
+                Accounts
+              </button>
+              <button
+                className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
+                onClick={() => navigate({ to: "/erp/new-voucher" })}
+              >
+                New Voucher
               </button>
               <button
                 className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"

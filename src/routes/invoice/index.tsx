@@ -46,8 +46,9 @@ function downloadInvoicesCsv(invoices: CsvInvoiceRow[]) {
   const link = document.createElement("a");
   link.href = url;
   link.download = `invoices-${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.append(link);
+  document.body.appendChild(link);
   link.click();
+  link.remove();
   link.remove();
   URL.revokeObjectURL(url);
 }
@@ -118,6 +119,18 @@ function ListInvoicePage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              to="/erp/accounts"
+              className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/25"
+            >
+              Accounts
+            </Link>
+            <Link
+              to="/erp/new-voucher"
+              className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/25"
+            >
+              New Voucher
+            </Link>
             <button
               type="button"
               onClick={() =>

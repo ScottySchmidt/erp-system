@@ -18,8 +18,19 @@ export const enum_status = pgEnum("status", ["draft", "sent", "paid", "overdue"]
 
 export const payment = pgTable("payment", {
   payment_id: bigint({ mode: "number" }).primaryKey().generatedByDefaultAsIdentity(),
+  user_id: bigint({ mode: "number" }).notNull(),
+  account_id: bigint({ mode: "number" }).notNull(),
+  voucher_number: varchar({ length: 50 }).notNull(),
+  payment_date: date().notNull(),
+  pay_type: varchar({ length: 20 }).notNull(),
+  total_amount: numeric({ precision: 12, scale: 2 }).notNull(),
+  description: text(),
+});
+
+export const payment_invoice = pgTable("payment_invoice", {
+  payment_id: bigint({ mode: "number" }).notNull(),
   invoice_id: bigint({ mode: "number" }).notNull(),
-  pay_type: enum_pay_type(),
+  amount_paid: numeric({ precision: 12, scale: 2 }).notNull(),
 });
 
 export const departments = pgTable("departments", {
@@ -46,6 +57,7 @@ export const invoices = pgTable("invoices", {
   amount: numeric({ precision: 12, scale: 2 }).notNull(),
   vendor_id: bigint({ mode: "number" }),
   created_date: date(),
+  is_paid: boolean().default(false).notNull(),
 });
 
 export const gl_accounts = pgTable("gl_accounts", {
@@ -78,3 +90,4 @@ export const auth_sessions = AuthSchema.table("sessions", {
   user_agent: text(),
   ip: inet(),
 });
+

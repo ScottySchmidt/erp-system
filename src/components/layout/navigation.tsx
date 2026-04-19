@@ -23,6 +23,16 @@ const userNav: NavigationItem[] = [
     icon: Icon.FileText,
   },
   {
+    title: "Accounts",
+    to: "/erp/accounts",
+    icon: Icon.Wallet,
+  },
+  {
+    title: "Vouchers",
+    to: "/erp/new-voucher",
+    icon: Icon.Receipt,
+  },
+  {
     title: "Vendors",
     to: "/erp/vendor",
     icon: Icon.Building2,

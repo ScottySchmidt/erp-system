@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { supabaseBrowser } from "#/lib/supabaseBrowser";
 
@@ -34,8 +34,18 @@ type UserInsertResult = {
   full_name: string | null;
 };
 
+type SupabaseUser = {
+  user_id: number;
+  created_at: string;
+  role_id: number | null;
+  dept_id: number | null;
+  email: string | null;
+  full_name: string | null;
+};
+
 function UserInsertPage() {
   const [loading, setLoading] = useState(false);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [roleId, setRoleId] = useState("");
   const [deptId, setDeptId] = useState("");
   const [password, setPassword] = useState("");
@@ -43,6 +53,29 @@ function UserInsertPage() {
   const [fullName, setFullName] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [lastInserted, setLastInserted] = useState<UserInsertResult | null>(null);
+  const [users, setUsers] = useState<SupabaseUser[]>([]);
+
+  async function loadUsers() {
+    if (!supabaseBrowser) return;
+    setUsersLoading(true);
+    try {
+      const { data, error } = await supabaseBrowser
+        .from("users")
+        .select("user_id, created_at, role_id, dept_id, email, full_name")
+        .order("user_id", { ascending: true });
+      if (error) {
+        setMessage({ type: "error", text: `Failed to load users: ${error.message}` });
+      } else {
+        setUsers(data ?? []);
+      }
+    } finally {
+      setUsersLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadUsers();
+  }, []);
 
   const handleInsert = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -105,6 +138,7 @@ function UserInsertPage() {
         setEmail("");
         setFullName("");
         setMessage({ type: "success", text: `User created successfully (ID: ${data.user_id}).` });
+        await loadUsers();
       }
     } catch (err) {
       console.error(err);
@@ -230,6 +264,60 @@ function UserInsertPage() {
             <p>Email: {lastInserted.email ?? "-"}</p>
           </div>
         )}
+
+        <div className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-xl font-semibold">All Users</h2>
+            <button
+              type="button"
+              onClick={() => void loadUsers()}
+              className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10"
+            >
+              Refresh Users
+            </button>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border border-white/10">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-900/70 text-slate-300">
+                <tr>
+                  <th className="px-3 py-2 text-left">User ID</th>
+                  <th className="px-3 py-2 text-left">Created</th>
+                  <th className="px-3 py-2 text-left">Role ID</th>
+                  <th className="px-3 py-2 text-left">Dept ID</th>
+                  <th className="px-3 py-2 text-left">Full Name</th>
+                  <th className="px-3 py-2 text-left">Email</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usersLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-4 text-slate-400">
+                      Loading users...
+                    </td>
+                  </tr>
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-4 text-slate-400">
+                      No users found.
+                    </td>
+                  </tr>
+                ) : (
+                  users.map((u) => (
+                    <tr key={u.user_id} className="border-t border-white/10 text-slate-100">
+                      <td className="px-3 py-2">{u.user_id}</td>
+                      <td className="px-3 py-2">{u.created_at}</td>
+                      <td className="px-3 py-2">{u.role_id ?? "-"}</td>
+                      <td className="px-3 py-2">{u.dept_id ?? "-"}</td>
+                      <td className="px-3 py-2">{u.full_name ?? "-"}</td>
+                      <td className="px-3 py-2">{u.email ?? "-"}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   );

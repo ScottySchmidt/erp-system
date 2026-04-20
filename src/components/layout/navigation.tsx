@@ -47,7 +47,7 @@ const adminNav: NavigationItem[] = [
   },
   {
     title: "Users",
-    to: "/", // TODO
+    to: "/erp/new-user",
     icon: Icon.Users,
   },
 ];

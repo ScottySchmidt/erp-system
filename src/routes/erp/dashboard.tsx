@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { desc, eq } from "drizzle-orm";
 
-import { RevenueChart } from "#/components/charts/revenue-chart";
+import { ExpensesChart } from "#/components/charts/expenses-chart";
 import { DashboardLayout } from "#/components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
@@ -118,36 +118,29 @@ function Dashboard() {
 
   const recentVouchers = vouchers.slice(0, 5);
   const displayedVouchers = showAllVouchers ? vouchers : recentVouchers;
-  const revenuePoints = useMemo(() => {
-    const monthlyTotals = new Map<string, number>();
+  const expensePoints = useMemo(() => {
+    const dailyTotals = new Map<string, number>();
 
-    invoices.forEach((invoice) => {
-      const rawDate = invoice.invoice_date ?? invoice.created_date ?? invoice.created_at;
+    vouchers.forEach((voucher) => {
+      const rawDate = voucher.payment_date;
       if (!rawDate) return;
 
       const date = new Date(rawDate);
       if (Number.isNaN(date.getTime())) return;
 
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const total = Number(invoice.total ?? invoice.amount ?? invoice.total_amount ?? 0);
-      monthlyTotals.set(key, (monthlyTotals.get(key) ?? 0) + total);
+      const key = date.toISOString().slice(0, 10);
+      const amount = Number(voucher.total_amount ?? 0);
+      dailyTotals.set(key, (dailyTotals.get(key) ?? 0) + amount);
     });
 
-    return Array.from(monthlyTotals.entries())
-      .sort(([monthA], [monthB]) => monthA.localeCompare(monthB))
-      .slice(-12)
-      .map(([month, total]) => {
-        const [year, monthNum] = month.split("-");
-        const monthLabel = new Date(Number(year), Number(monthNum) - 1, 1).toLocaleString(
-          undefined,
-          { month: "short" },
-        );
-        return {
-          label: `${monthLabel} ${year.slice(-2)}`,
-          total,
-        };
-      });
-  }, [invoices]);
+    return Array.from(dailyTotals.entries())
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .slice(-14)
+      .map(([date, total]) => ({
+        label: new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+        total,
+      }));
+  }, [vouchers]);
 
   return (
     <DashboardLayout title="Finance Control Center">
@@ -201,7 +194,7 @@ function Dashboard() {
           <StatCard label="Conversion" value={`${stats.conversionRate}%`} />
         </section>
 
-        <RevenueChart points={revenuePoints} />
+        <ExpensesChart points={expensePoints} />
 
         <section className="grid gap-3 lg:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">

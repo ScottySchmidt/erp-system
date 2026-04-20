@@ -47,7 +47,7 @@ const adminNav: NavigationItem[] = [
   },
   {
     title: "Users",
-    to: "/erp/new-user",
+    to: "/erp/users" as FileRouteTypes["to"],
     icon: Icon.Users,
   },
 ];

@@ -1,6 +1,6 @@
-import { Button, Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { useMutation } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import clsx from "clsx";
 import * as Icon from "lucide-react";
@@ -30,23 +30,25 @@ const logoutFn = createServerFn()
 
 function UserMenu() {
   const auth = useAuthInfoQuery();
+  const router = useRouter();
 
   const logoutMut = useMutation({
     mutationFn: logoutFn,
     async onSuccess() {
       await auth.refetch();
+      await router.invalidate();
+      await router.navigate({ to: "/auth/login" });
     },
   });
 
   if (!auth.data?.identity) {
     return (
-      <Button
-        as={Link}
+      <Link
         to="/auth/login"
-        className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 transition-colors hover:bg-gray-700"
+        className="inline-flex rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 transition-colors hover:bg-gray-700"
       >
         Login
-      </Button>
+      </Link>
     );
   }
 

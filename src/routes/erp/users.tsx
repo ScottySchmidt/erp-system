@@ -11,6 +11,7 @@ type UserRow = {
   user_id: number;
   full_name: string;
   last_login_at: string | null;
+  created_at: string;
 };
 
 const getUsers = createServerFn()
@@ -21,10 +22,11 @@ const getUsers = createServerFn()
         user_id: t.users.user_id,
         full_name: t.users.full_name,
         last_login_at: sql<string | null>`max(${t.auth_sessions.updated_at})`,
+        created_at: t.users.created_at,
       })
       .from(t.users)
       .leftJoin(t.auth_sessions, eq(t.auth_sessions.user_id, t.users.auth_id))
-      .groupBy(t.users.user_id, t.users.full_name)
+      .groupBy(t.users.user_id, t.users.full_name, t.users.created_at)
       .orderBy(asc(t.users.user_id));
 
     return users ?? [];
@@ -65,7 +67,7 @@ function UsersPage() {
       <section className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
         <h2 className="text-xl font-semibold">Users</h2>
         <p className="mt-1 text-sm text-slate-400">
-          Showing users with their latest login time from <code>auth.sessions</code>.
+          Showing users with latest login from <code>auth.sessions</code>.
         </p>
 
         <div className="mt-4 overflow-x-auto rounded-lg border border-white/10">
@@ -91,7 +93,9 @@ function UsersPage() {
                     <td className="px-3 py-2">{user.user_id}</td>
                     <td className="px-3 py-2">{user.full_name}</td>
                     <td className="px-3 py-2 text-slate-300">
-                      {user.last_login_at ? new Date(user.last_login_at).toLocaleString() : "Never"}
+                      {user.last_login_at
+                        ? new Date(user.last_login_at).toLocaleString()
+                        : `Never (created ${new Date(user.created_at).toLocaleString()})`}
                     </td>
                     <td className="px-3 py-2 text-slate-300">{formatLastSeen(user.last_login_at)}</td>
                   </tr>

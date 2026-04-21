@@ -91,3 +91,7 @@ export const auth_sessions = AuthSchema.table("sessions", {
   ip: inet(),
 });
 
+export const auth_users = AuthSchema.table("users", {
+  id: uuid().primaryKey(),
+  last_sign_in_at: timestamp({ withTimezone: true, mode: "string" }),
+});

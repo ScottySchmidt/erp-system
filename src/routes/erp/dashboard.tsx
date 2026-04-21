@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { useMutation } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { desc, eq } from "drizzle-orm";
 
 import { ExpensesChart } from "#/components/charts/expenses-chart";
 import { DashboardLayout } from "#/components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
-import { DatabaseProvider } from "#/lib/provider";
+import { DatabaseProvider, SupabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
 
 const getDashboardData = createServerFn()
@@ -42,6 +43,12 @@ const getDashboardData = createServerFn()
     return { invoices, vouchers, voucherInvoices };
   });
 
+const logoutFn = createServerFn()
+  .middleware([SupabaseProvider])
+  .handler(async ({ context }) => {
+    await context.supabase.auth.signOut();
+  });
+
 export const Route = createFileRoute("/erp/dashboard")({
   component: Dashboard,
   beforeLoad: async ({ context }) => {
@@ -66,6 +73,13 @@ function Dashboard() {
   const voucherInvoices = loaderData.voucherInvoices;
   const [showAllVouchers, setShowAllVouchers] = useState(false);
   const loading = false;
+  const logoutMut = useMutation({
+    mutationFn: logoutFn,
+    async onSuccess() {
+      sessionStorage.clear();
+      await navigate({ to: "/auth/login" });
+    },
+  });
 
   const stats = useMemo(() => {
     const totalInvoices = invoices.length;
@@ -80,8 +94,7 @@ function Dashboard() {
   }, [invoices]);
 
   function handleLogout() {
-    sessionStorage.clear();
-    void navigate({ to: "/auth/login" });
+    logoutMut.mutate({});
   }
 
   function exportData() {

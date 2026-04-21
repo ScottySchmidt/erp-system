@@ -7,6 +7,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react";
+import * as v from "valibot";
 
 import { DashboardLayout } from "../../components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "../../lib/auth";
@@ -63,16 +64,23 @@ const getVoucherFormOptions = createServerFn()
 
 const saveVoucherPayment = createServerFn({ method: "POST" })
   .middleware([DatabaseProvider, MustAuthenticate])
-  .handler(async (ctx: any) => {
-    const context = ctx.context as any;
-    const data = (ctx.data as any) ?? {};
-
-    const invoiceIds: number[] = data.invoiceIds ?? [];
-    const voucherNumber: string = data.voucherNumber ?? "";
-    const accountId: number | null = data.accountId ?? null;
-    const paymentDate: string = data.paymentDate ?? "";
-    const payTypeRaw: string = data.payType ?? "";
-    const description: string = data.description ?? "";
+  .inputValidator(
+    v.object({
+      invoiceIds: v.array(v.number()),
+      voucherNumber: v.string(),
+      accountId: v.number(),
+      paymentDate: v.string(),
+      payType: v.string(),
+      description: v.optional(v.string(), ""),
+    }),
+  )
+  .handler(async ({ context, data }) => {
+    const invoiceIds = data.invoiceIds ?? [];
+    const voucherNumber = data.voucherNumber ?? "";
+    const accountId = data.accountId ?? null;
+    const paymentDate = data.paymentDate ?? "";
+    const payTypeRaw = data.payType ?? "";
+    const description = data.description ?? "";
     const payType = payTypeRaw.toLowerCase().replaceAll(" ", "_");
     const allowedPayTypes = new Set(PAY_TYPES.map((type) => type.value));
 

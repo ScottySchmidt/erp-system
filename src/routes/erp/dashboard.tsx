@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { desc, eq } from "drizzle-orm";
 
+import { ExpensesChart } from "#/components/charts/expenses-chart";
 import { DashboardLayout } from "#/components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
@@ -117,6 +118,29 @@ function Dashboard() {
 
   const recentVouchers = vouchers.slice(0, 5);
   const displayedVouchers = showAllVouchers ? vouchers : recentVouchers;
+  const expensePoints = useMemo(() => {
+    const dailyTotals = new Map<string, number>();
+
+    vouchers.forEach((voucher) => {
+      const rawDate = voucher.payment_date;
+      if (!rawDate) return;
+
+      const date = new Date(rawDate);
+      if (Number.isNaN(date.getTime())) return;
+
+      const key = date.toISOString().slice(0, 10);
+      const amount = Number(voucher.total_amount ?? 0);
+      dailyTotals.set(key, (dailyTotals.get(key) ?? 0) + amount);
+    });
+
+    return Array.from(dailyTotals.entries())
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .slice(-14)
+      .map(([date, total]) => ({
+        date: new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+        total,
+      }));
+  }, [vouchers]);
 
   return (
     <DashboardLayout title="Finance Control Center">
@@ -169,6 +193,8 @@ function Dashboard() {
           <StatCard label="Customers" value={stats.totalCustomers.toString()} />
           <StatCard label="Conversion" value={`${stats.conversionRate}%`} />
         </section>
+
+        <ExpensesChart points={expensePoints} />
 
         <section className="grid gap-3 lg:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">

@@ -113,7 +113,6 @@ function AccountsPage() {
       <section className="flex flex-col gap-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-semibold">Accounts</h2>
             <p className="text-sm text-slate-400">
               Search accounts and view invoices connected to the selected account.
             </p>

@@ -43,7 +43,7 @@ function LoginPage() {
     onSuccess: async () => {
       await auth.refetch();
       await router.invalidate();
-      await router.navigate({ to: "/" });
+      await router.navigate({ to: "/erp/dashboard" });
     },
   });
 

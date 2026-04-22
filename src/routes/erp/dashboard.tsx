@@ -75,9 +75,9 @@ function Dashboard() {
   const loading = false;
   const logoutMut = useMutation({
     mutationFn: logoutFn,
-    async onSuccess() {
+    onSuccess() {
       sessionStorage.clear();
-      await navigate({ to: "/auth/login" });
+      void navigate({ to: "/", replace: true });
     },
   });
 
@@ -146,13 +146,23 @@ function Dashboard() {
       dailyTotals.set(key, (dailyTotals.get(key) ?? 0) + amount);
     });
 
-    return Array.from(dailyTotals.entries())
-      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-      .slice(-14)
-      .map(([date, total]) => ({
-        date: new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-        total,
-      }));
+    const points: Array<{ date: string; total: number }> = [];
+    const today = new Date();
+
+    // Keep a consistent long range in the chart: last 30 days.
+    for (let offset = 29; offset >= 0; offset -= 1) {
+      const date = new Date(today);
+      date.setHours(0, 0, 0, 0);
+      date.setDate(date.getDate() - offset);
+      const key = date.toISOString().slice(0, 10);
+
+      points.push({
+        date: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+        total: dailyTotals.get(key) ?? 0,
+      });
+    }
+
+    return points;
   }, [vouchers]);
 
   return (

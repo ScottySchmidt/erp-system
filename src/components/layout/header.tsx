@@ -34,10 +34,10 @@ function UserMenu() {
 
   const logoutMut = useMutation({
     mutationFn: logoutFn,
-    async onSuccess() {
-      await auth.refetch();
-      await router.invalidate();
-      await router.navigate({ to: "/auth/login" });
+    onSuccess() {
+      void auth.refetch();
+      void router.invalidate();
+      void router.navigate({ to: "/", replace: true });
     },
   });
 

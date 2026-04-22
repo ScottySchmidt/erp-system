@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAuthInfoQuery } from "#/lib/auth";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -46,6 +47,9 @@ const featureCards = [
 ];
 
 function HomePage() {
+  const auth = useAuthInfoQuery();
+  const isSignedIn = Boolean(auth.data?.identity);
+
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-950 via-slate-900 to-slate-950 text-white">
       <section className="relative overflow-hidden border-b border-slate-800">
@@ -76,19 +80,30 @@ function HomePage() {
               </p>
 
               <div className="flex flex-wrap gap-4">
-                <Link
-                  to="/auth/login"
-                  className="rounded-xl bg-cyan-500 px-8 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-500/30 transition hover:bg-cyan-400"
-                >
-                  Login
-                </Link>
+                {isSignedIn ? (
+                  <Link
+                    to="/erp/dashboard"
+                    className="rounded-xl bg-cyan-500 px-8 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-500/30 transition hover:bg-cyan-400"
+                  >
+                    Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      to="/auth/login"
+                      className="rounded-xl bg-cyan-500 px-8 py-3 font-semibold text-slate-950 shadow-lg shadow-cyan-500/30 transition hover:bg-cyan-400"
+                    >
+                      Login
+                    </Link>
 
-                <Link
-                  to="/auth/register"
-                  className="rounded-xl border border-slate-700 bg-slate-900 px-8 py-3 font-semibold text-white transition hover:border-cyan-400 hover:text-cyan-300"
-                >
-                  Register
-                </Link>
+                    <Link
+                      to="/auth/register"
+                      className="rounded-xl border border-slate-700 bg-slate-900 px-8 py-3 font-semibold text-white transition hover:border-cyan-400 hover:text-cyan-300"
+                    >
+                      Register
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
 

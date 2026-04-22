@@ -7,6 +7,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react";
+import * as v from "valibot";
 
 import { DashboardLayout } from "../../components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "../../lib/auth";
@@ -61,18 +62,25 @@ const getVoucherFormOptions = createServerFn()
     };
   });
 
+const saveVoucherPaymentSchema = v.object({
+  invoiceIds: v.array(v.pipe(v.number(), v.integer(), v.minValue(1))),
+  voucherNumber: v.string(),
+  accountId: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  paymentDate: v.pipe(v.string(), v.minLength(1)),
+  payType: v.pipe(v.string(), v.minLength(1)),
+  description: v.optional(v.string(), ""),
+});
+
 const saveVoucherPayment = createServerFn({ method: "POST" })
   .middleware([DatabaseProvider, MustAuthenticate])
-  .handler(async (ctx: any) => {
-    const context = ctx.context as any;
-    const data = (ctx.data as any) ?? {};
-
-    const invoiceIds: number[] = data.invoiceIds ?? [];
-    const voucherNumber: string = data.voucherNumber ?? "";
-    const accountId: number | null = data.accountId ?? null;
-    const paymentDate: string = data.paymentDate ?? "";
-    const payTypeRaw: string = data.payType ?? "";
-    const description: string = data.description ?? "";
+  .inputValidator(saveVoucherPaymentSchema)
+  .handler(async ({ context, data }) => {
+    const invoiceIds = data.invoiceIds;
+    const voucherNumber = data.voucherNumber;
+    const accountId = data.accountId;
+    const paymentDate = data.paymentDate;
+    const payTypeRaw = data.payType;
+    const description = data.description ?? "";
     const payType = payTypeRaw.toLowerCase().replaceAll(" ", "_");
     const allowedPayTypes = new Set(PAY_TYPES.map((type) => type.value));
 
@@ -80,7 +88,7 @@ const saveVoucherPayment = createServerFn({ method: "POST" })
       throw new Error("No invoices selected.");
     }
 
-    if (!accountId || !paymentDate || !payType) {
+    if (!paymentDate || !payType) {
       throw new Error("Missing required payment data.");
     }
 

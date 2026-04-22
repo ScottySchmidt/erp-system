@@ -189,55 +189,6 @@ function Dashboard() {
             </ul>
           </div>
 
-<<<<<<< HEAD
- <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
-  <h3 className="text-lg font-semibold">Quick Actions</h3>
-  <div className="mt-3 flex flex-wrap gap-2">
-    <button
-      className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
-      onClick={() => navigate({ to: "/erp/invoice" })}
-    >
-      New Invoice
-    </button>
-    <button
-      className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
-      onClick={() => navigate({ to: "/erp/vendor/new" })}
-    >
-      New Vendor
-    </button>
-    <button
-      className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
-      onClick={() => navigate({ to: "/erp/accounts" })}
-    >
-      Accounts
-    </button>
-    <button
-      className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
-      onClick={() => navigate({ to: "/erp/new-voucher" })}
-    >
-      New Voucher
-    </button>
-    <button
-      className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
-      onClick={() => navigate({ to: "/erp/search-voucher" })}
-    >
-      Search Invoice?
-    </button>
-    <button
-      className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
-      onClick={exportData}
-    >
-      Export Data
-    </button>
-    <button
-      className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
-      onClick={() => window.location.reload()}
-    >
-      Refresh
-    </button>
-  </div>
-</div>
-=======
           <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
             <h3 className="text-lg font-semibold">Quick Actions</h3>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -285,7 +236,6 @@ function Dashboard() {
               </button>
             </div>
           </div>
->>>>>>> cursor/mock-search-voucher-found-9f34
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">

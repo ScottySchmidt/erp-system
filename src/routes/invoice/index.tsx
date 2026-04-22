@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
@@ -7,7 +8,9 @@ import * as v from "valibot";
 import { DashboardLayout } from "#/components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
+import { openFinancialReportPdf } from "#/lib/report-pdf";
 import { t } from "#/lib/server/database";
+import { generateFinancialReport } from "#/lib/server/database/financial-reports";
 import { IntStrSchema } from "#/lib/validation";
 
 type CsvInvoiceRow = {
@@ -135,6 +138,13 @@ const ListInvoiceSchema = v.object({
   invoiceDateTo: v.optional(v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}$/))),
 });
 
+const InvoiceReportFilterSchema = v.object({
+  accountId: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1))),
+  vendorId: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1))),
+  invoiceDateFrom: v.optional(v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}$/))),
+  invoiceDateTo: v.optional(v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}$/))),
+});
+
 const listInvoiceFn = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
   .inputValidator(ListInvoiceSchema)
@@ -215,6 +225,18 @@ const listInvoiceFn = createServerFn()
     };
   });
 
+const exportFinancialReportFn = createServerFn()
+  .middleware([DatabaseProvider, MustAuthenticate])
+  .inputValidator(InvoiceReportFilterSchema)
+  .handler(async ({ data, context }) => {
+    return await generateFinancialReport(context.db, context.auth.profile.user_id, {
+      accountId: data.accountId,
+      vendorId: data.vendorId,
+      invoiceDateFrom: data.invoiceDateFrom,
+      invoiceDateTo: data.invoiceDateTo,
+    });
+  });
+
 function ListInvoicePage() {
   const navigate = useNavigate();
   const { invoices, totalCount, totalAmount, accounts, vendors, filters } =
@@ -225,6 +247,12 @@ function ListInvoicePage() {
   const [datePreset, setDatePreset] = useState<DateRangePreset>(
     detectPreset(filters.invoiceDateFrom ?? "", filters.invoiceDateTo ?? ""),
   );
+  const exportReportMut = useMutation({
+    mutationFn: exportFinancialReportFn,
+    onSuccess(report) {
+      openFinancialReportPdf(report, "Invoice Financial Report");
+    },
+  });
 
   useEffect(() => {
     const nextFrom = filters.invoiceDateFrom ?? "";
@@ -332,6 +360,22 @@ function ListInvoicePage() {
               className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/25 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Export CSV
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                exportReportMut.mutate({
+                  data: {
+                    accountId: filters.accountId ?? undefined,
+                    vendorId: filters.vendorId ?? undefined,
+                    invoiceDateFrom: filters.invoiceDateFrom ?? undefined,
+                    invoiceDateTo: filters.invoiceDateTo ?? undefined,
+                  },
+                })
+              }
+              className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-white/25"
+            >
+              Financial Report
             </button>
             <Link
               to="/invoice/new"

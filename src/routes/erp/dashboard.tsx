@@ -8,7 +8,9 @@ import { ExpensesChart } from "#/components/charts/expenses-chart";
 import { DashboardLayout } from "#/components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider, SupabaseProvider } from "#/lib/provider";
+import { openFinancialReportPdf } from "#/lib/report-pdf";
 import { t } from "#/lib/server/database";
+import { generateFinancialReport } from "#/lib/server/database/financial-reports";
 
 const getDashboardData = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
@@ -49,6 +51,12 @@ const logoutFn = createServerFn()
     await context.supabase.auth.signOut();
   });
 
+const exportFinancialReportFn = createServerFn()
+  .middleware([DatabaseProvider, MustAuthenticate])
+  .handler(async ({ context }) => {
+    return await generateFinancialReport(context.db, context.auth.profile.user_id);
+  });
+
 export const Route = createFileRoute("/erp/dashboard")({
   component: Dashboard,
   beforeLoad: async ({ context }) => {
@@ -80,6 +88,12 @@ function Dashboard() {
       void navigate({ to: "/", replace: true });
     },
   });
+  const exportReportMut = useMutation({
+    mutationFn: exportFinancialReportFn,
+    onSuccess(report) {
+      openFinancialReportPdf(report, "Financial Report");
+    },
+  });
 
   const stats = useMemo(() => {
     const totalInvoices = invoices.length;
@@ -95,29 +109,6 @@ function Dashboard() {
 
   function handleLogout() {
     logoutMut.mutate({});
-  }
-
-  function exportData() {
-    const report = {
-      export_date: new Date().toISOString(),
-      summary: {
-        total_invoices: invoices.length,
-        total_customers: stats.totalCustomers,
-        total_revenue: stats.totalRevenue,
-        paid_invoices: stats.paidInvoices,
-        conversion_rate: `${stats.conversionRate}%`,
-      },
-      invoices,
-      vouchers,
-    };
-
-    const dataStr = JSON.stringify(report, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `financial-report-${new Date().toISOString().split("T")[0]}.json`;
-    link.click();
   }
 
   const invoiceCountByPaymentId = useMemo(() => {
@@ -267,7 +258,7 @@ function Dashboard() {
               </button>
               <button
                 className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
-                onClick={exportData}
+                onClick={() => exportReportMut.mutate({})}
               >
                 Export Data
               </button>
@@ -359,7 +350,10 @@ function Dashboard() {
                         {invoiceCount}
                       </td>
                       <td className="border-b border-white/5 px-3 py-2">
-                        ${Number(voucher.total_amount ?? 0).toLocaleString()}
+                        ${Number(voucher.total_amount ?? 0).toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </td>
                     </tr>
                   );

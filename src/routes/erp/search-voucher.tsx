@@ -1,13 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { and, eq } from "drizzle-orm";
 import { useState, type FormEvent } from "react";
-import * as v from "valibot";
 
 import { DashboardLayout } from "#/components/layout/dashboard";
-import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
-import { DatabaseProvider } from "#/lib/provider";
-import { t } from "#/lib/server/database";
+import { redirectIfSignedOut } from "#/lib/auth";
 
 export const Route = createFileRoute('/erp/search-voucher')({
   beforeLoad: async ({ context }) => {
@@ -16,55 +11,18 @@ export const Route = createFileRoute('/erp/search-voucher')({
   component: SearchVoucherPage,
 })
 
-const SearchVoucherSchema = v.object({
-  invoiceId: v.pipe(v.number(), v.integer(), v.minValue(1)),
-});
-
-type Invoice = {
-  invoice_id: number;
-  vendor_id: number | null;
-  amount: number;
-  status: "paid" | "unpaid";
-};
-
-const searchVoucher = createServerFn()
-  .middleware([DatabaseProvider, MustAuthenticate])
-  .inputValidator(SearchVoucherSchema)
-  .handler(async ({ data, context }) => {
-    const invoices = await context.db
-      .select({
-        invoice_id: t.invoices.invoice_id,
-        vendor_id: t.invoices.vendor_id,
-        amount: t.invoices.amount,
-        is_paid: t.invoices.is_paid,
-      })
-      .from(t.invoices)
-      .where(
-        and(
-          eq(t.invoices.user_id, context.auth.profile.user_id),
-          eq(t.invoices.invoice_id, data.invoiceId),
-        ),
-      )
-      .limit(1);
-
-    return invoices.map((invoice) => ({
-      invoice_id: invoice.invoice_id,
-      vendor_id: invoice.vendor_id,
-      amount: Number(invoice.amount),
-      status: invoice.is_paid ? "paid" : "unpaid",
-    }));
-  });
-
 function SearchVoucherPage() {
   const [invoiceId, setInvoiceId] = useState("");
-  const [results, setResults] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [found, setFound] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   async function handleSearch(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
-    setResults([]);
+    setFound(false);
+    setHasSearched(false);
 
     const parsedInvoiceId = Number(invoiceId);
     if (!Number.isInteger(parsedInvoiceId) || parsedInvoiceId <= 0) {
@@ -73,12 +31,12 @@ function SearchVoucherPage() {
     }
 
     setLoading(true);
+    setHasSearched(true);
 
     try {
-      const invoices = await searchVoucher({
-        data: { invoiceId: parsedInvoiceId },
-      });
-      setResults(invoices);
+      // Temporary placeholder until the backend search is wired up.
+      await Promise.resolve();
+      setFound(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -111,39 +69,8 @@ function SearchVoucherPage() {
 
         {error && <p className="text-red-400">{error}</p>}
 
-        {!loading && results.length === 0 && invoiceId && !error && (
-          <p>No invoice found for that invoice ID.</p>
-        )}
-
-        {results.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse text-sm">
-              <thead className="text-slate-300">
-                <tr>
-                  <th className="border-b border-white/10 px-3 py-2 text-left">Invoice ID</th>
-                  <th className="border-b border-white/10 px-3 py-2 text-left">Vendor ID</th>
-                  <th className="border-b border-white/10 px-3 py-2 text-left">Amount</th>
-                  <th className="border-b border-white/10 px-3 py-2 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((invoice) => (
-                  <tr key={invoice.invoice_id} className="hover:bg-white/5">
-                    <td className="border-b border-white/5 px-3 py-2">{invoice.invoice_id}</td>
-                    <td className="border-b border-white/5 px-3 py-2">
-                      {invoice.vendor_id ?? "—"}
-                    </td>
-                    <td className="border-b border-white/5 px-3 py-2">
-                      ${invoice.amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    </td>
-                    <td className="border-b border-white/5 px-3 py-2 capitalize">
-                      {invoice.status}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {!loading && hasSearched && !error && found && (
+          <p className="text-green-400">Found</p>
         )}
       </div>
     </DashboardLayout>

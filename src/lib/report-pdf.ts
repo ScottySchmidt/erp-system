@@ -1,5 +1,17 @@
+function toText(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean" || typeof value === "bigint") {
+    return String(value);
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  return "";
+}
+
 function escapeHtml(value: unknown): string {
-  return String(value ?? "")
+  return toText(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -17,8 +29,10 @@ function formatCurrency(value: unknown): string {
 
 function formatDate(value: unknown): string {
   if (!value) return "—";
-  const date = new Date(String(value));
-  if (Number.isNaN(date.getTime())) return escapeHtml(value);
+  const text = toText(value);
+  if (!text) return "—";
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return escapeHtml(text);
   return date.toLocaleDateString();
 }
 

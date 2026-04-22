@@ -20,6 +20,13 @@ import { IntStrSchema } from "#/lib/validation";
 
 import { DataSchema, InvoiceForm } from "./-form";
 
+type InvoiceLineItemRow = {
+  description: string;
+  quantity: number | string;
+  price: number | string;
+  tax_rate: number | string;
+};
+
 const RoutePathSchema = v.object({
   id: v.pipe(IntStrSchema, v.integer()),
 });
@@ -129,7 +136,7 @@ function EditInvoicePage() {
           invoice_date: formatDate(new Date(invoice.invoice_date)),
           amount: String(invoice.amount),
         }}
-        initialLineItems={line_items.map((item) => ({
+        initialLineItems={line_items.map((item: InvoiceLineItemRow) => ({
           description: item.description,
           quantity: Number(item.quantity),
           price: Number(item.price),

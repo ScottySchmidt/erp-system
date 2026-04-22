@@ -267,10 +267,14 @@ function ListInvoicePage() {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
-    const accountId = String(formData.get("accountId") ?? "").trim();
-    const vendorId = String(formData.get("vendorId") ?? "").trim();
-    const nextInvoiceDateFrom = String(formData.get("invoiceDateFrom") ?? "").trim();
-    const nextInvoiceDateTo = String(formData.get("invoiceDateTo") ?? "").trim();
+    const getFormFieldText = (key: string) => {
+      const value = formData.get(key);
+      return typeof value === "string" ? value.trim() : "";
+    };
+    const accountId = getFormFieldText("accountId");
+    const vendorId = getFormFieldText("vendorId");
+    const nextInvoiceDateFrom = getFormFieldText("invoiceDateFrom");
+    const nextInvoiceDateTo = getFormFieldText("invoiceDateTo");
 
     void navigate({
       to: "/invoice",

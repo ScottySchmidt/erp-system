@@ -217,13 +217,13 @@ function Dashboard() {
               <li className="flex items-center justify-between border-b border-white/5 pb-2">
                 <span>Paid</span>
                 <span className="font-semibold">
-                  {invoices.filter((i) => Boolean(i.is_paid)).length}
+                  {invoices.filter((i) => i.is_paid).length}
                 </span>
               </li>
               <li className="flex items-center justify-between">
                 <span>Unpaid</span>
                 <span className="font-semibold">
-                  {invoices.filter((i) => !Boolean(i.is_paid)).length}
+                  {invoices.filter((i) => !i.is_paid).length}
                 </span>
               </li>
             </ul>

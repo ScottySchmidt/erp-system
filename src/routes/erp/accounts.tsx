@@ -77,8 +77,8 @@ function AccountsPage() {
     invoices: Invoice[];
     accounts: Account[];
   };
-  const invoices = loaderData.invoices ?? [];
-  const accounts = loaderData.accounts ?? [];
+  const invoices = loaderData.invoices;
+  const accounts = loaderData.accounts;
   const [search, setSearch] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
 

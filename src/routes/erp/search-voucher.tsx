@@ -107,8 +107,6 @@ function SearchVoucherPage() {
   return (
     <DashboardLayout title="Search Voucher">
       <div className="space-y-4">
-
-
         <form onSubmit={handleSearch} className="flex flex-wrap items-center gap-2">
           <input
             type="number"

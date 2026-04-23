@@ -46,7 +46,7 @@ function UserMenu() {
     onSuccess() {
       void auth.refetch();
       void router.invalidate();
-      void router.navigate({ to: "/", replace: true });
+      void router.navigate({ to: "/auth/login", replace: true });
     },
   });
 

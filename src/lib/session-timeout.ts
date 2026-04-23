@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 
 import { DatabaseProvider, SupabaseProvider } from "#/lib/provider";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface SessionTimeoutRule {
   flow: "create-voucher" | "new-invoice" | "edit-invoice";
@@ -70,6 +71,7 @@ const sessionTimeoutLogoutFn = createServerFn()
 export function useGlobalInactivitySessionTimeout(options: UseGlobalSessionTimeoutOptions = {}) {
   const { timeoutMinutes = 5, enabled = true } = options;
   const router = useRouter();
+  const queryClient = useQueryClient();
   const timerRef = useRef<number | undefined>(undefined);
   const intervalRef = useRef<number | undefined>(undefined);
   const deadlineRef = useRef<number>(0);
@@ -116,8 +118,9 @@ export function useGlobalInactivitySessionTimeout(options: UseGlobalSessionTimeo
           try {
             await sessionTimeoutLogoutFn({});
           } finally {
+            await queryClient.invalidateQueries({ queryKey: ["#!/auth"] });
             await router.invalidate();
-            await router.navigate({ to: "/auth/login", replace: true });
+            await router.navigate({ to: "/", replace: true });
           }
         })();
       }, timeoutMs);
@@ -141,7 +144,7 @@ export function useGlobalInactivitySessionTimeout(options: UseGlobalSessionTimeo
         window.removeEventListener(eventName, onActivity);
       });
     };
-  }, [enabled, router, timeoutMinutes]);
+  }, [enabled, router, queryClient, timeoutMinutes]);
 
   const minutes = Math.floor(remainingSeconds / 60)
     .toString()

@@ -1,12 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { desc, eq } from "drizzle-orm";
 
 import { ExpensesChart } from "#/components/charts/expenses-chart";
 import { DashboardLayout } from "#/components/layout/dashboard";
-import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
+import { MustAuthenticate, redirectIfSignedOut, useAuthInfoQuery } from "#/lib/auth";
 import { DatabaseProvider, SupabaseProvider } from "#/lib/provider";
 import { openFinancialReportPdf } from "#/lib/report-pdf";
 import { t } from "#/lib/server/database";
@@ -71,6 +71,8 @@ type VoucherInvoice = Record<string, any>;
 
 function Dashboard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const auth = useAuthInfoQuery();
   const loaderData = Route.useLoaderData() as {
     invoices: Invoice[];
     vouchers: Voucher[];
@@ -79,13 +81,16 @@ function Dashboard() {
   const invoices = loaderData.invoices;
   const vouchers = loaderData.vouchers;
   const voucherInvoices = loaderData.voucherInvoices;
-  const [showAllVouchers, setShowAllVouchers] = useState(false);
   const loading = false;
   const logoutMut = useMutation({
     mutationFn: logoutFn,
     onSuccess() {
-      sessionStorage.clear();
-      void navigate({ to: "/", replace: true });
+      void (async () => {
+        sessionStorage.clear();
+        await auth.refetch();
+        await queryClient.invalidateQueries({ queryKey: ["#!/auth"] });
+        await navigate({ to: "/", replace: true });
+      })();
     },
   });
   const exportReportMut = useMutation({
@@ -120,8 +125,7 @@ function Dashboard() {
     return countMap;
   }, [voucherInvoices]);
 
-  const recentVouchers = vouchers.slice(0, 5);
-  const displayedVouchers = showAllVouchers ? vouchers : recentVouchers;
+  const displayedVouchers = vouchers.slice(0, 5);
   const expensePoints = useMemo(() => {
     const dailyTotals = new Map<string, number>();
 
@@ -285,14 +289,6 @@ function Dashboard() {
               <span className="text-sm text-slate-400">
                 Showing {displayedVouchers.length} of {vouchers.length}
               </span>
-              {vouchers.length > 5 && (
-                <button
-                  className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
-                  onClick={() => setShowAllVouchers((prev) => !prev)}
-                >
-                  {showAllVouchers ? "Show Recent Only" : "View All Previous Vouchers"}
-                </button>
-              )}
             </div>
           </div>
 

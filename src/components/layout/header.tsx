@@ -44,9 +44,11 @@ function UserMenu() {
   const logoutMut = useMutation({
     mutationFn: logoutFn,
     onSuccess() {
-      void auth.refetch();
-      void router.invalidate();
-      void router.navigate({ to: "/auth/login", replace: true });
+      void (async () => {
+        await auth.refetch();
+        await router.invalidate();
+        await router.navigate({ to: "/", replace: true });
+      })();
     },
   });
 

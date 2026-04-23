@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { desc, eq } from "drizzle-orm";
 
 import { ExpensesChart, type BarChartPoint } from "#/components/charts/expenses-chart";
@@ -13,6 +13,9 @@ import { t } from "#/lib/server/database";
 import { generateFinancialReport } from "#/lib/server/database/financial-reports";
 import { syncInvoicePaidStatusByPaymentDate } from "#/lib/server/database/invoice-payment-status";
 import { formatDate } from "#/lib/utils";
+
+const REJECTED_NOTE_PREFIX = "[REJECTED]";
+const VOUCHERS_PER_PAGE = 5;
 
 const getDashboardData = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
@@ -32,6 +35,7 @@ const getDashboardData = createServerFn()
           payment_date: t.payment.payment_date,
           pay_type: t.payment.pay_type,
           total_amount: t.payment.total_amount,
+          description: t.payment.description,
         })
         .from(t.payment)
         .where(eq(t.payment.user_id, context.auth.profile.user_id))
@@ -208,7 +212,17 @@ function Dashboard() {
     return countMap;
   }, [voucherInvoices]);
 
-  const displayedVouchers = vouchers.slice(0, 5);
+  const [voucherPage, setVoucherPage] = useState(0);
+  const maxVoucherPage = Math.max(0, Math.ceil(vouchers.length / VOUCHERS_PER_PAGE) - 1);
+  const currentVoucherPage = Math.min(voucherPage, maxVoucherPage);
+  const displayedVouchers = useMemo(() => {
+    const start = currentVoucherPage * VOUCHERS_PER_PAGE;
+    const end = start + VOUCHERS_PER_PAGE;
+    return vouchers.slice(start, end);
+  }, [currentVoucherPage, vouchers]);
+  const shownVoucherStart = vouchers.length === 0 ? 0 : currentVoucherPage * VOUCHERS_PER_PAGE + 1;
+  const shownVoucherEnd = Math.min((currentVoucherPage + 1) * VOUCHERS_PER_PAGE, vouchers.length);
+  const todayKey = formatDate(new Date());
   const expensePoints = useMemo(() => {
     const dailyTotals = new Map<string, number>();
     const currentMonthKey = formatDate(new Date()).slice(0, 7);
@@ -376,8 +390,26 @@ function Dashboard() {
             <h3 className="text-lg font-semibold">Previous Vouchers</h3>
             <div className="flex items-center gap-3">
               <span className="text-sm text-slate-400">
-                Showing {displayedVouchers.length} of {vouchers.length}
+                Showing {shownVoucherStart}-{shownVoucherEnd} of {vouchers.length}
               </span>
+              <button
+                type="button"
+                aria-label="Show newer vouchers"
+                className="rounded-lg border border-white/15 px-3 py-1 text-sm text-slate-100 transition hover:border-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => setVoucherPage((prev) => Math.max(0, prev - 1))}
+                disabled={currentVoucherPage === 0}
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                aria-label="Show older vouchers"
+                className="rounded-lg border border-white/15 px-3 py-1 text-sm text-slate-100 transition hover:border-white/25 disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => setVoucherPage((prev) => Math.min(maxVoucherPage, prev + 1))}
+                disabled={currentVoucherPage >= maxVoucherPage}
+              >
+                →
+              </button>
             </div>
           </div>
 
@@ -398,6 +430,9 @@ function Dashboard() {
                     Invoices
                   </th>
                   <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">
+                    Status
+                  </th>
+                  <th className="border-b border-white/10 px-3 py-2 text-left font-semibold">
                     Total Amount
                   </th>
                 </tr>
@@ -405,13 +440,13 @@ function Dashboard() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-3 py-6 text-center text-slate-400">
+                    <td colSpan={6} className="px-3 py-6 text-center text-slate-400">
                       Loading vouchers...
                     </td>
                   </tr>
                 ) : displayedVouchers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-3 py-6 text-center text-slate-400">
+                    <td colSpan={6} className="px-3 py-6 text-center text-slate-400">
                       No vouchers yet. Create one to get started.
                     </td>
                   </tr>
@@ -419,13 +454,18 @@ function Dashboard() {
                   displayedVouchers.map((voucher, idx) => {
                     const paymentId = Number(voucher.payment_id);
                     const invoiceCount = invoiceCountByPaymentId.get(paymentId) ?? 0;
+                    const paymentDateKey = normalizeDateKey(voucher.payment_date);
+                    const isRejected = String(voucher.description ?? "")
+                      .trim()
+                      .startsWith(REJECTED_NOTE_PREFIX);
+                    const isPending = Boolean(paymentDateKey && paymentDateKey > todayKey);
                     const payTypeText = String(voucher.pay_type ?? "")
                       .split("_")
                       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
                       .join(" ");
 
                     return (
-                    <tr key={idx} className="hover:bg-white/5">
+                    <tr key={paymentId > 0 ? paymentId : idx} className="hover:bg-white/5">
                       <td className="border-b border-white/5 px-3 py-2 font-semibold">
                         {voucher.voucher_number ?? "—"}
                       </td>
@@ -437,6 +477,21 @@ function Dashboard() {
                       </td>
                       <td className="border-b border-white/5 px-3 py-2">
                         {invoiceCount}
+                      </td>
+                      <td className="border-b border-white/5 px-3 py-2">
+                        {isRejected ? (
+                          <span className="inline-flex rounded-full border border-red-500/40 bg-red-500/15 px-2 py-0.5 text-xs font-medium text-red-200">
+                            Rejected
+                          </span>
+                        ) : isPending ? (
+                          <span className="inline-flex rounded-full border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-medium text-amber-200">
+                            Pending
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-200">
+                            Processed
+                          </span>
+                        )}
                       </td>
                       <td className="border-b border-white/5 px-3 py-2">
                         ${Number(voucher.total_amount ?? 0).toLocaleString(undefined, {

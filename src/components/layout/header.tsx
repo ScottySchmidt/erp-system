@@ -35,7 +35,9 @@ function UserMenu() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
-  const enableGlobalTimeout = Boolean(auth.data?.identity) && !pathname.startsWith("/auth");
+  const isAdmin = auth.data?.profile?.role_id === 1;
+  const enableGlobalTimeout =
+    Boolean(auth.data?.identity) && !pathname.startsWith("/auth") && !isAdmin;
   const globalSession = useGlobalInactivitySessionTimeout({
     timeoutMinutes: 5,
     enabled: enableGlobalTimeout,

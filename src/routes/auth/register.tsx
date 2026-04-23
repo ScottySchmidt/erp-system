@@ -12,7 +12,6 @@ import { AuthLayout } from "#/components/layout/auth";
 import { redirectIfSignedIn, useAuthInfoQuery } from "#/lib/auth";
 import { DatabaseProvider, SupabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
-import { IntStrSchema } from "#/lib/validation";
 
 import { styles } from "./-styles";
 
@@ -28,8 +27,20 @@ const RegisterSchema = v.object({
   full_name: v.pipe(v.string(), v.nonEmpty()),
   email: v.pipe(v.string(), v.email()),
   password: v.pipe(v.string(), v.nonEmpty()),
-  role_id: v.pipe(IntStrSchema, v.integer()),
-  dept_id: v.pipe(IntStrSchema, v.integer()),
+  role_id: v.pipe(
+    v.string(),
+    v.nonEmpty("Role is required"),
+    v.digits("Role is required"),
+    v.transform(Number),
+    v.integer(),
+  ),
+  dept_id: v.pipe(
+    v.string(),
+    v.nonEmpty("Department is required"),
+    v.digits("Department is required"),
+    v.transform(Number),
+    v.integer(),
+  ),
   admin_secret_code: v.string(),
 });
 

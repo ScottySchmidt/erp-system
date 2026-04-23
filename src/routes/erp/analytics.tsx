@@ -7,9 +7,7 @@ import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
 import { ExpensesChart, type BarChartPoint } from "#/components/charts/expenses-chart";
-
-const BUSINESS_TIME_ZONE = "America/Chicago";
-const REJECTED_NOTE_PREFIX = "[REJECTED]";
+import { BUSINESS_TIME_ZONE, REJECTED_NOTE_PREFIX } from "#/lib/voucher";
 
 type AnalyticsData = {
   vendorPoints: BarChartPoint[];

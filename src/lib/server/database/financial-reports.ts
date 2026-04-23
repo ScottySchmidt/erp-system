@@ -2,9 +2,7 @@ import { and, eq, gte, lte } from "drizzle-orm";
 
 import { t, type DrizzleClient } from "#/lib/server/database";
 import { syncInvoicePaidStatusByPaymentDate } from "#/lib/server/database/invoice-payment-status";
-
-const BUSINESS_TIME_ZONE = "America/Chicago";
-const REJECTED_NOTE_PREFIX = "[REJECTED]";
+import { BUSINESS_TIME_ZONE, getTodayDateKey, getVoucherStatus } from "#/lib/voucher";
 
 type InvoiceReportFilters = {
   accountId?: number;
@@ -12,57 +10,6 @@ type InvoiceReportFilters = {
   invoiceDateFrom?: string;
   invoiceDateTo?: string;
 };
-
-function getTodayKeyInTimeZone(timeZone: string): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
-function normalizeDateKey(value: unknown): string | null {
-  if (value instanceof Date) {
-    return new Intl.DateTimeFormat("en-CA", {
-      timeZone: BUSINESS_TIME_ZONE,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(value);
-  }
-
-  if (value === null || value === undefined) {
-    return null;
-  }
-
-  const rawText =
-    typeof value === "string"
-      ? value.trim()
-      : typeof value === "number"
-        ? String(value)
-        : null;
-  if (!rawText) {
-    return null;
-  }
-
-  const datePrefixMatch = /^(\d{4}-\d{2}-\d{2})/.exec(rawText);
-  if (datePrefixMatch?.[1]) {
-    return datePrefixMatch[1];
-  }
-
-  const parsed = new Date(rawText);
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: BUSINESS_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(parsed);
-}
 
 export async function generateFinancialReport(
   db: DrizzleClient,
@@ -116,18 +63,19 @@ export async function generateFinancialReport(
     ...row,
     amount: Number(row.amount ?? 0),
   }));
-  const todayKey = getTodayKeyInTimeZone(BUSINESS_TIME_ZONE);
+  const todayKey = getTodayDateKey({ timeZone: BUSINESS_TIME_ZONE });
   const payments = paymentRows.map((row) => {
-    const paymentDateKey = normalizeDateKey(row.payment_date);
-    const isRejected = String(row.description ?? "")
-      .trim()
-      .startsWith(REJECTED_NOTE_PREFIX);
-    const isPending = Boolean(paymentDateKey && paymentDateKey > todayKey);
+    const paymentStatus = getVoucherStatus({
+      paymentDate: row.payment_date,
+      description: row.description,
+      todayKey,
+      timeZone: BUSINESS_TIME_ZONE,
+    });
 
     return {
       ...row,
       total_amount: Number(row.total_amount ?? 0),
-      payment_status: isRejected ? "rejected" : isPending ? "pending" : "processed",
+      payment_status: paymentStatus,
     };
   });
 

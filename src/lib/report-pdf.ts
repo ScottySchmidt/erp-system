@@ -43,6 +43,16 @@ function formatSummaryValue(key: string, value: unknown): string {
   return escapeHtml(value);
 }
 
+function formatPaymentStatus(value: unknown): string {
+  const raw = toText(value).trim().toLowerCase();
+  if (!raw) return "Processed";
+
+  return raw
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
 export function openFinancialReportPdf(report: any, title = "Financial Report") {
   const printWindow = window.open("about:blank", "_blank");
   if (!printWindow) {
@@ -78,6 +88,7 @@ export function openFinancialReportPdf(report: any, title = "Financial Report") 
           <td>${escapeHtml(payment.voucher_number ?? payment.payment_id ?? "—")}</td>
           <td>${formatDate(payment.payment_date)}</td>
           <td>${escapeHtml(payment.pay_type ?? "—")}</td>
+          <td>${escapeHtml(formatPaymentStatus(payment.payment_status))}</td>
           <td>$${formatCurrency(payment.total_amount)}</td>
         </tr>
       `,
@@ -125,9 +136,9 @@ export function openFinancialReportPdf(report: any, title = "Financial Report") 
       <h2>Payments</h2>
       <table>
         <thead>
-          <tr><th>Voucher</th><th>Date</th><th>Type</th><th>Total</th></tr>
+          <tr><th>Voucher</th><th>Date</th><th>Type</th><th>Status</th><th>Total</th></tr>
         </thead>
-        <tbody>${paymentRows || '<tr><td colspan="4">No payments</td></tr>'}</tbody>
+        <tbody>${paymentRows || '<tr><td colspan="5">No payments</td></tr>'}</tbody>
       </table>
     </div>
   </body>

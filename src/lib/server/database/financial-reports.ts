@@ -3,12 +3,66 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { t, type DrizzleClient } from "#/lib/server/database";
 import { syncInvoicePaidStatusByPaymentDate } from "#/lib/server/database/invoice-payment-status";
 
+const BUSINESS_TIME_ZONE = "America/Chicago";
+const REJECTED_NOTE_PREFIX = "[REJECTED]";
+
 type InvoiceReportFilters = {
   accountId?: number;
   vendorId?: number;
   invoiceDateFrom?: string;
   invoiceDateTo?: string;
 };
+
+function getTodayKeyInTimeZone(timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function normalizeDateKey(value: unknown): string | null {
+  if (value instanceof Date) {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: BUSINESS_TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(value);
+  }
+
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const rawText =
+    typeof value === "string"
+      ? value.trim()
+      : typeof value === "number"
+        ? String(value)
+        : null;
+  if (!rawText) {
+    return null;
+  }
+
+  const datePrefixMatch = /^(\d{4}-\d{2}-\d{2})/.exec(rawText);
+  if (datePrefixMatch?.[1]) {
+    return datePrefixMatch[1];
+  }
+
+  const parsed = new Date(rawText);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: BUSINESS_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(parsed);
+}
 
 export async function generateFinancialReport(
   db: DrizzleClient,
@@ -52,6 +106,7 @@ export async function generateFinancialReport(
         payment_date: t.payment.payment_date,
         pay_type: t.payment.pay_type,
         total_amount: t.payment.total_amount,
+        description: t.payment.description,
       })
       .from(t.payment)
       .where(eq(t.payment.user_id, userId)),
@@ -61,14 +116,27 @@ export async function generateFinancialReport(
     ...row,
     amount: Number(row.amount ?? 0),
   }));
-  const payments = paymentRows.map((row) => ({
-    ...row,
-    total_amount: Number(row.total_amount ?? 0),
-  }));
+  const todayKey = getTodayKeyInTimeZone(BUSINESS_TIME_ZONE);
+  const payments = paymentRows.map((row) => {
+    const paymentDateKey = normalizeDateKey(row.payment_date);
+    const isRejected = String(row.description ?? "")
+      .trim()
+      .startsWith(REJECTED_NOTE_PREFIX);
+    const isPending = Boolean(paymentDateKey && paymentDateKey > todayKey);
+
+    return {
+      ...row,
+      total_amount: Number(row.total_amount ?? 0),
+      payment_status: isRejected ? "rejected" : isPending ? "pending" : "processed",
+    };
+  });
 
   const totalInvoices = invoices.length;
   const paidInvoices = invoices.filter((invoice) => Boolean(invoice.is_paid)).length;
   const unpaidInvoices = totalInvoices - paidInvoices;
+  const processedPayments = payments.filter((payment) => payment.payment_status === "processed").length;
+  const pendingPayments = payments.filter((payment) => payment.payment_status === "pending").length;
+  const rejectedPayments = payments.filter((payment) => payment.payment_status === "rejected").length;
   const invoiceAmountTotal = invoices.reduce((sum, invoice) => sum + invoice.amount, 0);
   const paymentAmountTotal = payments.reduce((sum, payment) => sum + payment.total_amount, 0);
   const totalVendors = new Set(invoices.map((invoice) => invoice.vendor_id).filter(Boolean)).size;
@@ -88,6 +156,9 @@ export async function generateFinancialReport(
       unpaid_invoices: unpaidInvoices,
       total_invoice_amount: invoiceAmountTotal,
       total_payment_amount: paymentAmountTotal,
+      processed_payments: processedPayments,
+      pending_payments: pendingPayments,
+      rejected_payments: rejectedPayments,
       total_vendors: totalVendors,
       total_accounts: totalAccounts,
     },

@@ -29,6 +29,11 @@ const userNav: NavigationItem[] = [
     icon: Icon.Wallet,
   },
   {
+    title: "Analytics",
+    to: "/erp/analytics" as FileRouteTypes["to"],
+    icon: Icon.BarChart3,
+  },
+  {
     title: "Vouchers",
     to: "/voucher",
     icon: Icon.Receipt,

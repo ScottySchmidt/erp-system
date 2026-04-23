@@ -6,11 +6,18 @@ import * as v from "valibot";
 import { FieldError } from "#/components/form";
 import { IntStrSchema, MoneySchema } from "#/lib/validation";
 
+const PositiveMoneySchema = v.pipe(
+  MoneySchema,
+  v.transform((input) => Number(input)),
+  v.minValue(0.01, "Amount must be greater than 0."),
+  v.transform((input) => input.toFixed(2)),
+);
+
 export const DataSchema = v.object({
   account_id: v.pipe(v.number(), v.integer()),
   vendor_id: v.nullable(v.pipe(v.number(), v.integer())),
   invoice_date: v.string(),
-  amount: MoneySchema,
+  amount: PositiveMoneySchema,
   line_items: v.pipe(
     v.array(
       v.object({
@@ -200,6 +207,11 @@ export function InvoiceForm(props: InvoiceFormProps) {
         setSubmitDebugMessage(
           `Cannot submit invoice yet. ${lineItemErrorSummaries[0]} Fix the line-item issues and try again.`,
         );
+        return;
+      }
+
+      if (calculatedTotalCents <= 0) {
+        setSubmitDebugMessage("Cannot submit invoice yet. Amount must be greater than 0.");
         return;
       }
 

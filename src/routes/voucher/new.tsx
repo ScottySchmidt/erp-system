@@ -14,6 +14,7 @@ import { MustAuthenticate, redirectIfSignedOut } from "../../lib/auth";
 import { DatabaseProvider } from "../../lib/provider";
 import { t } from "../../lib/server/database";
 import { getDatabaseErrorReason } from "../../lib/server/database/invoices";
+import { syncInvoicePaidStatusByPaymentDate } from "../../lib/server/database/invoice-payment-status";
 import {
   SESSION_TIMEOUT_RULES,
   useSessionTimeoutTracker,
@@ -33,6 +34,8 @@ const PAY_TYPES = [
 const getVoucherFormOptions = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
   .handler(async ({ context }) => {
+    await syncInvoicePaidStatusByPaymentDate(context.db, context.auth.profile.user_id);
+
     const invoices = await context.db
       .select({
         invoice_id: t.invoices.invoice_id,
@@ -101,6 +104,8 @@ const saveVoucherPayment = createServerFn({ method: "POST" })
     }
 
     return await context.db.transaction(async (tx: any) => {
+      await syncInvoicePaidStatusByPaymentDate(tx, context.auth.profile.user_id);
+
       const invoiceRows = await tx
         .select({
           invoice_id: t.invoices.invoice_id,
@@ -171,20 +176,7 @@ const saveVoucherPayment = createServerFn({ method: "POST" })
         }))
       );
 
-      await tx
-        .update(t.invoices)
-        .set({
-          is_paid: true,
-        })
-        .where(
-          and(
-            eq(t.invoices.user_id, context.auth.profile.user_id),
-            inArray(
-              t.invoices.invoice_id,
-              invoiceRows.map((inv: any) => inv.invoice_id),
-            ),
-          )
-        );
+      await syncInvoicePaidStatusByPaymentDate(tx, context.auth.profile.user_id);
 
       return {
         success: true,

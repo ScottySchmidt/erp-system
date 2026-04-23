@@ -1,6 +1,7 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 
 import { t, type DrizzleClient } from "#/lib/server/database";
+import { syncInvoicePaidStatusByPaymentDate } from "#/lib/server/database/invoice-payment-status";
 
 type InvoiceReportFilters = {
   accountId?: number;
@@ -14,6 +15,8 @@ export async function generateFinancialReport(
   userId: number,
   filters: InvoiceReportFilters = {},
 ) {
+  await syncInvoicePaidStatusByPaymentDate(db, userId);
+
   const invoiceWhere = and(
     eq(t.invoices.user_id, userId),
     filters.accountId === undefined ? undefined : eq(t.invoices.account_id, filters.accountId),

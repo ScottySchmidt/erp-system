@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { type FormEvent, useEffect, useState } from "react";
 import * as v from "valibot";
 
@@ -11,6 +11,7 @@ import { DatabaseProvider } from "#/lib/provider";
 import { openFinancialReportPdf } from "#/lib/report-pdf";
 import { t } from "#/lib/server/database";
 import { generateFinancialReport } from "#/lib/server/database/financial-reports";
+import { syncInvoicePaidStatusByPaymentDate } from "#/lib/server/database/invoice-payment-status";
 import { IntStrSchema } from "#/lib/validation";
 
 type CsvInvoiceRow = {
@@ -118,6 +119,7 @@ const RouteSearchSchema = v.object({
   invoiceDateFrom: v.optional(v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}$/))),
   invoiceDateTo: v.optional(v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}$/))),
 });
+const BUSINESS_TIME_ZONE = "America/Chicago";
 
 export const Route = createFileRoute("/invoice/")({
   component: ListInvoicePage,
@@ -149,6 +151,8 @@ const listInvoiceFn = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
   .inputValidator(ListInvoiceSchema)
   .handler(async ({ data, context }) => {
+    await syncInvoicePaidStatusByPaymentDate(context.db, context.auth.profile.user_id);
+
     const sortOrder = data.sortOrder === "asc" ? "asc" : "desc";
     const filters = and(
       eq(t.invoices.user_id, context.auth.profile.user_id),
@@ -209,8 +213,58 @@ const listInvoiceFn = createServerFn()
         .orderBy(asc(t.vendor.vendor_id)),
     ]);
 
+    const invoiceIds = invoices.map((invoice) => invoice.invoice_id);
+    const futurePayments =
+      invoiceIds.length > 0
+        ? await context.db
+            .select({
+              invoice_id: t.payment_invoice.invoice_id,
+              payment_date: t.payment.payment_date,
+              voucher_number: t.payment.voucher_number,
+              payment_id: t.payment.payment_id,
+            })
+            .from(t.payment_invoice)
+            .innerJoin(t.payment, eq(t.payment_invoice.payment_id, t.payment.payment_id))
+            .where(
+              and(
+                eq(t.payment.user_id, context.auth.profile.user_id),
+                inArray(t.payment_invoice.invoice_id, invoiceIds),
+                sql`${t.payment.payment_date} > (now() at time zone ${BUSINESS_TIME_ZONE})::date`,
+              ),
+            )
+            .orderBy(
+              asc(t.payment_invoice.invoice_id),
+              asc(t.payment.payment_date),
+              asc(t.payment.payment_id),
+            )
+        : [];
+
+    const futurePaymentByInvoice = new Map<
+      number,
+      { payment_date: string; voucher_number: string | null }
+    >();
+    for (const payment of futurePayments) {
+      const invoiceId = Number(payment.invoice_id);
+      if (!futurePaymentByInvoice.has(invoiceId)) {
+        futurePaymentByInvoice.set(invoiceId, {
+          payment_date: String(payment.payment_date),
+          voucher_number: payment.voucher_number ?? null,
+        });
+      }
+    }
+
+    const invoicesWithPaymentStatus = invoices.map((invoice) => {
+      const futurePayment = futurePaymentByInvoice.get(Number(invoice.invoice_id));
+      return {
+        ...invoice,
+        has_future_payment: Boolean(futurePayment),
+        next_payment_date: futurePayment?.payment_date ?? null,
+        next_voucher_number: futurePayment?.voucher_number ?? null,
+      };
+    });
+
     return {
-      invoices,
+      invoices: invoicesWithPaymentStatus,
       totalCount: Number(totals.totalCount),
       totalAmount: Number(totals.totalAmount),
       accounts,
@@ -517,6 +571,16 @@ function ListInvoicePage() {
                     <span className="rounded bg-emerald-700 px-2 py-1 text-sm font-semibold text-emerald-50">
                       Paid
                     </span>
+                  ) : invoice.has_future_payment ? (
+                    <div className="flex flex-col gap-1">
+                      <span className="w-fit rounded bg-amber-700 px-2 py-1 text-sm font-semibold text-amber-50">
+                        Pending
+                      </span>
+                      <span className="text-xs text-amber-200">
+                        {invoice.next_voucher_number ?? "Scheduled payment"}
+                        {invoice.next_payment_date ? ` on ${invoice.next_payment_date}` : ""}
+                      </span>
+                    </div>
                   ) : (
                     <Link
                       to="/invoice/$id"

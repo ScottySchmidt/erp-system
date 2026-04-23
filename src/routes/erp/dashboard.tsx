@@ -11,10 +11,14 @@ import { DatabaseProvider, SupabaseProvider } from "#/lib/provider";
 import { openFinancialReportPdf } from "#/lib/report-pdf";
 import { t } from "#/lib/server/database";
 import { generateFinancialReport } from "#/lib/server/database/financial-reports";
+import { syncInvoicePaidStatusByPaymentDate } from "#/lib/server/database/invoice-payment-status";
+import { formatDate } from "#/lib/utils";
 
 const getDashboardData = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
   .handler(async ({ context }) => {
+    await syncInvoicePaidStatusByPaymentDate(context.db, context.auth.profile.user_id);
+
     const [invoices, vouchers, voucherInvoices] = await Promise.all([
       context.db
         .select()
@@ -69,6 +73,39 @@ type Invoice = Record<string, any>;
 type Voucher = Record<string, any>;
 type VoucherInvoice = Record<string, any>;
 
+function normalizeDateKey(value: unknown): string | null {
+  if (value instanceof Date) {
+    return formatDate(value);
+  }
+
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  const rawText =
+    typeof value === "string"
+      ? value.trim()
+      : typeof value === "number"
+        ? String(value)
+        : null;
+
+  if (!rawText) {
+    return null;
+  }
+
+  const datePrefixMatch = /^(\d{4}-\d{2}-\d{2})/.exec(rawText);
+  if (datePrefixMatch?.[1]) {
+    return datePrefixMatch[1];
+  }
+
+  const parsed = new Date(rawText);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return formatDate(parsed);
+}
+
 function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -100,6 +137,38 @@ function Dashboard() {
     },
   });
 
+  const pendingInvoiceIds = useMemo(() => {
+    const paymentDateById = new Map<number, string>();
+    vouchers.forEach((voucher) => {
+      const paymentId = Number(voucher.payment_id);
+      const paymentDate = normalizeDateKey(voucher.payment_date);
+      if (paymentId > 0 && paymentDate) {
+        paymentDateById.set(paymentId, paymentDate);
+      }
+    });
+
+    const today = new Date();
+    const todayKey = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-");
+
+    const pendingIds = new Set<number>();
+    voucherInvoices.forEach((row) => {
+      const paymentId = Number(row.payment_id);
+      const invoiceId = Number(row.invoice_id);
+      const paymentDate = paymentDateById.get(paymentId);
+      if (!paymentDate || invoiceId <= 0) return;
+
+      if (paymentDate > todayKey) {
+        pendingIds.add(invoiceId);
+      }
+    });
+
+    return pendingIds;
+  }, [vouchers, voucherInvoices]);
+
   const stats = useMemo(() => {
     const totalInvoices = invoices.length;
     const totalRevenue = invoices.reduce(
@@ -107,10 +176,24 @@ function Dashboard() {
       0,
     );
     const paidInvoices = invoices.filter((inv) => Boolean(inv.is_paid)).length;
+    const pendingInvoices = invoices.filter(
+      (inv) => !inv.is_paid && pendingInvoiceIds.has(Number(inv.invoice_id)),
+    ).length;
+    const unpaidInvoices = invoices.filter(
+      (inv) => !inv.is_paid && !pendingInvoiceIds.has(Number(inv.invoice_id)),
+    ).length;
     const conversionRate = totalInvoices ? Math.round((paidInvoices / totalInvoices) * 100) : 0;
     const totalCustomers = new Set(invoices.map((inv) => inv.vendor_id).filter(Boolean)).size;
-    return { totalInvoices, totalRevenue, paidInvoices, conversionRate, totalCustomers };
-  }, [invoices]);
+    return {
+      totalInvoices,
+      totalRevenue,
+      paidInvoices,
+      pendingInvoices,
+      unpaidInvoices,
+      conversionRate,
+      totalCustomers,
+    };
+  }, [invoices, pendingInvoiceIds]);
 
   function handleLogout() {
     logoutMut.mutate({});
@@ -130,13 +213,8 @@ function Dashboard() {
     const dailyTotals = new Map<string, number>();
 
     vouchers.forEach((voucher) => {
-      const rawDate = voucher.payment_date;
-      if (!rawDate) return;
-
-      const date = new Date(rawDate);
-      if (Number.isNaN(date.getTime())) return;
-
-      const key = date.toISOString().slice(0, 10);
+      const key = normalizeDateKey(voucher.payment_date);
+      if (!key) return;
       const amount = Number(voucher.total_amount ?? 0);
       dailyTotals.set(key, (dailyTotals.get(key) ?? 0) + amount);
     });
@@ -221,13 +299,19 @@ function Dashboard() {
               <li className="flex items-center justify-between border-b border-white/5 pb-2">
                 <span>Paid</span>
                 <span className="font-semibold">
-                  {invoices.filter((i) => i.is_paid).length}
+                  {stats.paidInvoices}
+                </span>
+              </li>
+              <li className="flex items-center justify-between border-b border-white/5 pb-2">
+                <span>Pending</span>
+                <span className="font-semibold">
+                  {stats.pendingInvoices}
                 </span>
               </li>
               <li className="flex items-center justify-between">
                 <span>Unpaid</span>
                 <span className="font-semibold">
-                  {invoices.filter((i) => !i.is_paid).length}
+                  {stats.unpaidInvoices}
                 </span>
               </li>
             </ul>
@@ -341,9 +425,7 @@ function Dashboard() {
                         {voucher.voucher_number ?? "—"}
                       </td>
                       <td className="border-b border-white/5 px-3 py-2 text-slate-300">
-                        {voucher.payment_date
-                          ? new Date(voucher.payment_date).toLocaleDateString()
-                          : "—"}
+                        {normalizeDateKey(voucher.payment_date) ?? "—"}
                       </td>
                       <td className="border-b border-white/5 px-3 py-2 text-slate-300">
                         {payTypeText || "—"}

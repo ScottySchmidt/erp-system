@@ -47,6 +47,11 @@ const userNav: NavigationItem[] = [
 
 const adminNav: NavigationItem[] = [
   {
+    title: "Admin",
+    to: "/erp/admin" as FileRouteTypes["to"],
+    icon: Icon.ShieldAlert,
+  },
+  {
     title: "Test",
     to: "/test",
     icon: Icon.Activity,
@@ -78,9 +83,9 @@ export function Navigation(props: NavigationProps) {
       {isAdmin && (
         <div className="mt-4 border-t border-white/10 pt-4">
           <div className="mb-2 px-2 text-[11px] font-semibold tracking-[0.2em] text-slate-500 uppercase">
-            Administration
+            Admin
           </div>
-          <nav className="space-y-1" aria-label="Administration">
+          <nav className="space-y-1" aria-label="Admin">
             {adminNav.map((item) => (
               <NavLink key={item.to} pathname={pathname} {...item} />
             ))}

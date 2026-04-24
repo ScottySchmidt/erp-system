@@ -80,6 +80,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const auth = useAuthInfoQuery();
+  const isAdmin = auth.data?.profile?.role_id === 1;
   const loaderData = Route.useLoaderData() as {
     invoices: Invoice[];
     vouchers: Voucher[];
@@ -465,6 +466,30 @@ function Dashboard() {
             </table>
           </div>
         </section>
+
+        {isAdmin ? (
+          <section className="rounded-2xl border border-amber-400/20 bg-gradient-to-r from-amber-500/10 via-slate-950/50 to-slate-900/70 p-5 shadow-[0_18px_70px_rgba(15,23,42,0.55)] backdrop-blur">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="max-w-2xl">
+                <div className="inline-flex rounded-full border border-amber-300/30 px-3 py-1 text-xs tracking-[0.14em] text-amber-100">
+                  ADMINISTRATION
+                </div>
+                <h3 className="mt-3 text-lg font-semibold text-white">Protected advanced controls</h3>
+                <p className="mt-1 text-sm text-slate-300">
+                  Access specialized admin tools for trusted operators. Opening this area
+                  requires an additional password check.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-xl border border-amber-300/30 bg-amber-400/15 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-200/50 hover:bg-amber-300/20"
+                onClick={() => navigate({ to: "/erp/admin" })}
+              >
+                Open Admin
+              </button>
+            </div>
+          </section>
+        ) : null}
       </div>
     </DashboardLayout>
   );

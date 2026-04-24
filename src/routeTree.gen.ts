@@ -26,6 +26,7 @@ import { Route as ErpNewUserRouteImport } from './routes/erp/new-user'
 import { Route as ErpInvoiceRouteImport } from './routes/erp/invoice'
 import { Route as ErpDashboardRouteImport } from './routes/erp/dashboard'
 import { Route as ErpAnalyticsRouteImport } from './routes/erp/analytics'
+import { Route as ErpAdminRouteImport } from './routes/erp/admin'
 import { Route as ErpAccountsRouteImport } from './routes/erp/accounts'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
@@ -117,6 +118,11 @@ const ErpAnalyticsRoute = ErpAnalyticsRouteImport.update({
   path: '/erp/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ErpAdminRoute = ErpAdminRouteImport.update({
+  id: '/erp/admin',
+  path: '/erp/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ErpAccountsRoute = ErpAccountsRouteImport.update({
   id: '/erp/accounts',
   path: '/erp/accounts',
@@ -150,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/erp/accounts': typeof ErpAccountsRoute
+  '/erp/admin': typeof ErpAdminRoute
   '/erp/analytics': typeof ErpAnalyticsRoute
   '/erp/dashboard': typeof ErpDashboardRoute
   '/erp/invoice': typeof ErpInvoiceRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/erp/accounts': typeof ErpAccountsRoute
+  '/erp/admin': typeof ErpAdminRoute
   '/erp/analytics': typeof ErpAnalyticsRoute
   '/erp/dashboard': typeof ErpDashboardRoute
   '/erp/invoice': typeof ErpInvoiceRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/erp/accounts': typeof ErpAccountsRoute
+  '/erp/admin': typeof ErpAdminRoute
   '/erp/analytics': typeof ErpAnalyticsRoute
   '/erp/dashboard': typeof ErpDashboardRoute
   '/erp/invoice': typeof ErpInvoiceRoute
@@ -225,6 +234,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/erp/accounts'
+    | '/erp/admin'
     | '/erp/analytics'
     | '/erp/dashboard'
     | '/erp/invoice'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/erp/accounts'
+    | '/erp/admin'
     | '/erp/analytics'
     | '/erp/dashboard'
     | '/erp/invoice'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/register'
     | '/erp/accounts'
+    | '/erp/admin'
     | '/erp/analytics'
     | '/erp/dashboard'
     | '/erp/invoice'
@@ -298,6 +310,7 @@ export interface RootRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
   ErpAccountsRoute: typeof ErpAccountsRoute
+  ErpAdminRoute: typeof ErpAdminRoute
   ErpAnalyticsRoute: typeof ErpAnalyticsRoute
   ErpDashboardRoute: typeof ErpDashboardRoute
   ErpInvoiceRoute: typeof ErpInvoiceRoute
@@ -437,6 +450,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ErpAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/erp/admin': {
+      id: '/erp/admin'
+      path: '/erp/admin'
+      fullPath: '/erp/admin'
+      preLoaderRoute: typeof ErpAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/erp/accounts': {
       id: '/erp/accounts'
       path: '/erp/accounts'
@@ -482,6 +502,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
   ErpAccountsRoute: ErpAccountsRoute,
+  ErpAdminRoute: ErpAdminRoute,
   ErpAnalyticsRoute: ErpAnalyticsRoute,
   ErpDashboardRoute: ErpDashboardRoute,
   ErpInvoiceRoute: ErpInvoiceRoute,

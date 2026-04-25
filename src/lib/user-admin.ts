@@ -48,6 +48,7 @@ export const deleteUserByAdminFn = createServerFn({ method: "POST" })
         user_id: t.users.user_id,
         auth_id: t.users.auth_id,
         full_name: t.users.full_name,
+        role_id: t.users.role_id,
       })
       .from(t.users)
       .where(eq(t.users.user_id, data.userId))
@@ -56,6 +57,10 @@ export const deleteUserByAdminFn = createServerFn({ method: "POST" })
 
     if (!targetUser) {
       throw new Error("User not found.");
+    }
+
+    if (Number(targetUser.role_id) === 1) {
+      throw new Error("Admin users cannot be deleted.");
     }
 
     const expectedSentence = `DELETE USER ${targetUser.user_id}`;

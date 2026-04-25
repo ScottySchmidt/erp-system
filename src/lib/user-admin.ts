@@ -1,10 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createClient } from "@supabase/supabase-js";
 import { env } from "cloudflare:workers";
 import { eq, sql } from "drizzle-orm";
 import * as v from "valibot";
 
 import { MustAuthenticate } from "#/lib/auth";
-import { DatabaseProvider, SupabaseProvider } from "#/lib/provider";
+import { DatabaseProvider } from "#/lib/provider";
 import { t } from "#/lib/server/database";
 
 export const DeleteUserSchema = v.object({
@@ -14,7 +15,7 @@ export const DeleteUserSchema = v.object({
 });
 
 export const deleteUserByAdminFn = createServerFn({ method: "POST" })
-  .middleware([DatabaseProvider, SupabaseProvider, MustAuthenticate])
+  .middleware([DatabaseProvider, MustAuthenticate])
   .inputValidator(DeleteUserSchema)
   .handler(async ({ context, data }) => {
     if (context.auth.profile.role_id !== 1) {
@@ -62,11 +63,6 @@ export const deleteUserByAdminFn = createServerFn({ method: "POST" })
       throw new Error(`Confirmation sentence mismatch. Please type "${expectedSentence}".`);
     }
 
-    const authDeleteResult = await context.supabase.auth.admin.deleteUser(targetUser.auth_id);
-    if (authDeleteResult.error) {
-      throw new Error(`Failed to delete auth user: ${authDeleteResult.error.message}`);
-    }
-
     await context.db.transaction(async (tx: any) => {
       await tx.execute(sql`
         delete from payment_invoice pi
@@ -84,12 +80,41 @@ export const deleteUserByAdminFn = createServerFn({ method: "POST" })
 
       await tx.delete(t.payment).where(eq(t.payment.user_id, targetUser.user_id));
       await tx.delete(t.invoices).where(eq(t.invoices.user_id, targetUser.user_id));
-      await tx.delete(t.auth_sessions).where(eq(t.auth_sessions.user_id, targetUser.auth_id));
       await tx.delete(t.users).where(eq(t.users.user_id, targetUser.user_id));
     });
+
+    const adminClient = getSupabaseAdminClient();
+    const authDeleteResult = await adminClient.auth.admin.deleteUser(targetUser.auth_id);
+    if (authDeleteResult.error) {
+      throw new Error(
+        `User row deleted but failed to delete auth user: ${authDeleteResult.error.message}`,
+      );
+    }
 
     return {
       deletedUserId: targetUser.user_id,
       deletedFullName: targetUser.full_name,
     };
   });
+
+function getSupabaseAdminClient() {
+  const workerEnv = env as unknown as Record<string, string | undefined> | undefined;
+  const supabaseUrl = workerEnv?.SUPABASE_URL ?? process.env.SUPABASE_URL ?? "";
+  const serviceRoleKey =
+    workerEnv?.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+
+  if (!supabaseUrl.trim()) {
+    throw new Error("Missing SUPABASE_URL on server.");
+  }
+
+  if (!serviceRoleKey.trim()) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY on server.");
+  }
+
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}

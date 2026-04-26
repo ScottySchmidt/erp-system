@@ -302,7 +302,7 @@ function Dashboard() {
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 className="rounded-lg border border-white/15 px-3 py-2 text-sm text-slate-100 transition hover:border-white/25"
-                onClick={() => navigate({ to: "/erp/invoice" })}
+                onClick={() => navigate({ to: "/invoice/new" })}
               >
                 New Invoice
               </button>

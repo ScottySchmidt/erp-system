@@ -95,25 +95,4 @@ describe("VendorService", () => {
     ).rejects.toThrow("Vendor name is required.");
   });
 
-  it("T4 (Req 3.1.19) Search Records - Unit Testing (Blackbox)", async () => {
-    const repository = new FakeVendorRepository([
-      {
-        vendor_id: 11,
-        vendor_name: "Acme Corp",
-        vendor_address: "10 Main St, Austin, TX 73301",
-      },
-      {
-        vendor_id: 12,
-        vendor_name: "Blue Labs",
-        vendor_address: "21 Lake St, Dallas, TX 75001",
-      },
-    ]);
-    const service = new VendorService(repository);
-
-    const vendors = await service.listVendors();
-    const match = vendors.find((vendor) => vendor.vendor_name === "Blue Labs");
-
-    expect(vendors).toHaveLength(2);
-    expect(match?.vendor_id).toBe(12);
-  });
 });

@@ -67,7 +67,7 @@ describe("InvoiceService", () => {
     ]);
   });
 
-  it("T1 (Req 3.1.5) Generate Invoice - Unit Testing (Blackbox)", async () => {
+  it("creates invoice with computed total amount", async () => {
     const repository = new FakeInvoiceRepository();
     const service = new InvoiceApplicationService(repository);
 

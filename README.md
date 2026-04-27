@@ -110,15 +110,6 @@ npm run test
 
 ### 4.2.4 Testing
 
-#### 4.2.4.1 Testing Summary
-
-| Test # | Requirement # | Test Format | Test Technique | Additional Notes |
-| --- | --- | --- | --- | --- |
-| T1 | 3.1.5 | Testing | Unit Testing (Blackbox) | Generate Invoice |
-| T2 | 3.1.7 | Testing | Unit Testing (Whitebox) | Update Invoice Status |
-| T3 | 3.1.8 | Testing | Unit Testing (Blackbox) | Create Bill |
-| T4 | 3.1.19 | Testing | Unit Testing (Blackbox) | Search Records |
-
 ## Styling
 
 This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.

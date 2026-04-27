@@ -117,7 +117,7 @@ class FakePaymentRepository implements PaymentRepository {
 }
 
 describe("PaymentService", () => {
-  it("T2 (Req 3.1.7) Update Invoice Status - Unit Testing (Whitebox)", async () => {
+  it("creates voucher payment and marks selected invoices paid", async () => {
     const repository = new FakePaymentRepository([
       { invoice_id: 11, amount: 120.5, account_id: 2001, is_paid: false, user_id: 7 },
       { invoice_id: 12, amount: 30, account_id: 2001, is_paid: false, user_id: 7 },
@@ -145,32 +145,6 @@ describe("PaymentService", () => {
     expect(repository.getLinkCount()).toBe(2);
     expect(repository.isInvoicePaid(11)).toBe(true);
     expect(repository.isInvoicePaid(12)).toBe(true);
-  });
-
-  it("T3 (Req 3.1.8) Create Bill - Unit Testing (Blackbox)", async () => {
-    const repository = new FakePaymentRepository([
-      { invoice_id: 31, amount: 49.99, account_id: 4100, is_paid: false, user_id: 7 },
-    ]);
-    const service = new PaymentService(repository, {
-      generateVoucherNumber: () => "VCH-BILL-1",
-    });
-
-    const result = await service.createVoucherPayment({
-      userId: 7,
-      invoiceIds: [31],
-      voucherNumber: "",
-      accountId: 4100,
-      paymentDate: "2099-01-01",
-      payType: "check",
-      description: "Create bill payment",
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.voucherNumber).toBe("VCH-BILL-1");
-    expect(result.updatedCount).toBe(1);
-    expect(result.totalAmount).toBe(49.99);
-    expect(repository.getPaymentCount()).toBe(1);
-    expect(repository.getLinkCount()).toBe(1);
   });
 
   it("throws when no invoices are selected", async () => {

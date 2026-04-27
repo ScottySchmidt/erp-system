@@ -1,12 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { desc } from "drizzle-orm";
 
 import { DashboardLayout } from "#/components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
-import { t } from "#/lib/server/database";
 
 export const Route = createFileRoute("/vendor/")({
   component: VendorListPage,
@@ -25,16 +23,11 @@ type Vendor = {
 const getVendors = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
   .handler(async ({ context }) => {
-    const data = await context.db
-      .select({
-        vendor_id: t.vendor.vendor_id,
-        vendor_name: t.vendor.vendor_name,
-        vendor_address: t.vendor.vendor_address,
-      })
-      .from(t.vendor)
-      .orderBy(desc(t.vendor.vendor_id));
-
-    return data;
+    const { DrizzleVendorRepository } = await import("#/lib/vendor/vendor-repository");
+    const { VendorService } = await import("#/lib/vendor/vendor-service");
+    const repository = new DrizzleVendorRepository(context.db);
+    const service = new VendorService(repository);
+    return await service.listVendors();
   });
 
 function VendorListPage() {

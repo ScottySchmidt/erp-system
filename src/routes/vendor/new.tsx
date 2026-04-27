@@ -3,12 +3,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
 
 import { DashboardLayout } from "#/components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "#/lib/auth";
 import { DatabaseProvider } from "#/lib/provider";
-import { t } from "#/lib/server/database";
 
 export const Route = createFileRoute("/vendor/new")({
   component: VendorInsertPage,
@@ -36,40 +34,16 @@ const insertVendor = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
   .inputValidator(VendorInsertSchema)
   .handler(async ({ data, context }) => {
-    const vendor_address = `${data.house_number} ${data.street}, ${data.city}, ${data.state} ${data.postal_code}`;
-
-    const existing = await context.db
-      .select()
-      .from(t.vendor)
-      .where(eq(t.vendor.vendor_name, data.vendor_name))
-      .limit(1);
-
-    if (existing.length) {
-      const v = existing[0];
-      return {
-        vendor_id: v.vendor_id,
-        vendor_name: v.vendor_name,
-        vendor_address: v.vendor_address
-      };
-    }
-
-    const inserted = await context.db
-      .insert(t.vendor)
-      .values({
-        vendor_name: data.vendor_name,
-        vendor_address,
-      })
-      .returning()
-      .then((rows) => rows[0]);
-
-    if (!inserted) {
-      throw new Error("Failed to create vendor");
-    }
+    const { DrizzleVendorRepository } = await import("#/lib/vendor/vendor-repository");
+    const { VendorService } = await import("#/lib/vendor/vendor-service");
+    const repository = new DrizzleVendorRepository(context.db);
+    const service = new VendorService(repository);
+    const result = await service.createVendor(data);
 
     return {
-      vendor_id: inserted.vendor_id,
-      vendor_name: inserted.vendor_name,
-      vendor_address: inserted.vendor_address,
+      vendor_id: result.vendor_id,
+      vendor_name: result.vendor_name,
+      vendor_address: result.vendor_address,
     };
   });
 

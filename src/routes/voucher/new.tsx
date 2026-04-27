@@ -1,6 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { and, desc, eq, inArray } from "drizzle-orm";
 import {
   useMemo,
   useState,
@@ -12,9 +11,6 @@ import * as v from "valibot";
 import { DashboardLayout } from "../../components/layout/dashboard";
 import { MustAuthenticate, redirectIfSignedOut } from "../../lib/auth";
 import { DatabaseProvider } from "../../lib/provider";
-import { t } from "../../lib/server/database";
-import { getDatabaseErrorReason } from "../../lib/server/database/invoices";
-import { syncInvoicePaidStatusByPaymentDate } from "../../lib/server/database/invoice-payment-status";
 import {
   SESSION_TIMEOUT_RULES,
   useSessionTimeoutTracker,
@@ -34,39 +30,11 @@ const PAY_TYPES = [
 const getVoucherFormOptions = createServerFn()
   .middleware([DatabaseProvider, MustAuthenticate])
   .handler(async ({ context }) => {
-    await syncInvoicePaidStatusByPaymentDate(context.db, context.auth.profile.user_id);
-
-    const invoices = await context.db
-      .select({
-        invoice_id: t.invoices.invoice_id,
-        invoice_date: t.invoices.invoice_date,
-        amount: t.invoices.amount,
-        account_id: t.invoices.account_id,
-        vendor_name: t.vendor.vendor_name,
-      })
-      .from(t.invoices)
-      .leftJoin(t.vendor, eq(t.invoices.vendor_id, t.vendor.vendor_id))
-      .where(
-        and(
-          eq(t.invoices.user_id, context.auth.profile.user_id),
-          eq(t.invoices.is_paid, false),
-        )
-      )
-      .orderBy(desc(t.invoices.invoice_id));
-
-    const accountIds = Array.from(
-      new Set(invoices.map((invoice) => Number(invoice.account_id)).filter(Boolean)),
-    ).sort((a, b) => a - b);
-
-    const accounts: Account[] = accountIds.map((accountId) => ({
-      account_id: accountId,
-      account_name: `Account ${accountId}`,
-    }));
-
-    return {
-      invoices,
-      accounts,
-    };
+    const { DrizzlePaymentRepository } = await import("../../lib/payment/payment-repository");
+    const { PaymentService } = await import("../../lib/payment/payment-service");
+    const repository = new DrizzlePaymentRepository(context.db);
+    const service = new PaymentService(repository);
+    return await service.getVoucherFormOptions(context.auth.profile.user_id);
   });
 
 const saveVoucherPayment = createServerFn({ method: "POST" })
@@ -82,109 +50,19 @@ const saveVoucherPayment = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ context, data }) => {
-    const invoiceIds = data.invoiceIds ?? [];
-    const voucherNumber = data.voucherNumber ?? "";
-    const accountId = data.accountId ?? null;
-    const paymentDate = data.paymentDate ?? "";
-    const payTypeRaw = data.payType ?? "";
-    const description = data.description ?? "";
-    const payType = payTypeRaw.toLowerCase().replaceAll(" ", "_");
-    const allowedPayTypes = new Set(PAY_TYPES.map((type) => type.value));
+    const { DrizzlePaymentRepository } = await import("../../lib/payment/payment-repository");
+    const { PaymentService } = await import("../../lib/payment/payment-service");
+    const repository = new DrizzlePaymentRepository(context.db);
+    const service = new PaymentService(repository);
 
-    if (!invoiceIds.length) {
-      throw new Error("No invoices selected.");
-    }
-
-    if (!accountId || !paymentDate || !payType) {
-      throw new Error("Missing required payment data.");
-    }
-
-    if (!allowedPayTypes.has(payType as (typeof PAY_TYPES)[number]["value"])) {
-      throw new Error("Invalid payment type.");
-    }
-
-    return await context.db.transaction(async (tx: any) => {
-      await syncInvoicePaidStatusByPaymentDate(tx, context.auth.profile.user_id);
-
-      const invoiceRows = await tx
-        .select({
-          invoice_id: t.invoices.invoice_id,
-          amount: t.invoices.amount,
-          account_id: t.invoices.account_id,
-        })
-        .from(t.invoices)
-        .where(
-          and(
-            eq(t.invoices.user_id, context.auth.profile.user_id),
-            eq(t.invoices.is_paid, false),
-            inArray(t.invoices.invoice_id, invoiceIds),
-          )
-        );
-
-      if (!invoiceRows.length) {
-        throw new Error("No valid unpaid invoices found.");
-      }
-
-      const accountIsInSelectedInvoices = invoiceRows.some(
-        (inv: any) => Number(inv.account_id) === Number(accountId),
-      );
-      if (!accountIsInSelectedInvoices) {
-        throw new Error("Selected account does not match selected unpaid invoices.");
-      }
-
-      const totalAmount = invoiceRows.reduce(
-        (sum: number, inv: any) => sum + Number(inv.amount),
-        0,
-      );
-
-      let insertedPayment;
-      try {
-        insertedPayment = await tx
-          .insert(t.payment)
-          .values({
-            user_id: context.auth.profile.user_id,
-            account_id: accountId,
-            voucher_number: voucherNumber || `VCH-${Date.now()}`,
-            payment_date: paymentDate,
-            pay_type: payType,
-            total_amount: totalAmount,
-            description: description || null,
-          })
-          .returning({
-            payment_id: t.payment.payment_id,
-            voucher_number: t.payment.voucher_number,
-          });
-      } catch (error) {
-        const reason = getDatabaseErrorReason(error);
-        throw new Error(
-          `Payment insert failed (account_id=${accountId}, pay_type=${payType}, payment_date=${paymentDate}). ${reason}`,
-        );
-      }
-
-      const paymentId = insertedPayment[0]?.payment_id;
-      const savedVoucherNumber = insertedPayment[0]?.voucher_number;
-
-      if (!paymentId) {
-        throw new Error("Failed to create payment record.");
-      }
-
-      await tx.insert(t.payment_invoice).values(
-        invoiceRows.map((inv: any) => ({
-          payment_id: paymentId,
-          invoice_id: inv.invoice_id,
-          amount_paid: Number(inv.amount),
-        }))
-      );
-
-      await syncInvoicePaidStatusByPaymentDate(tx, context.auth.profile.user_id);
-
-      return {
-        success: true,
-        paymentId,
-        voucherNumber: savedVoucherNumber,
-        updatedCount: invoiceRows.length,
-        totalAmount,
-      };
+    return await service.createVoucherPayment({
+      userId: context.auth.profile.user_id,
+      invoiceIds: data.invoiceIds,
+      voucherNumber: data.voucherNumber,
+      accountId: data.accountId,
+      paymentDate: data.paymentDate,
+      payType: data.payType,
+      description: data.description,
     });
   });
 

@@ -145,4 +145,40 @@ describe("SandboxTransferEngine", () => {
       }),
     ).toThrowError("Choose two different accounts for an internal transfer.");
   });
+
+  it("covers white-box decision branches: invalid, insufficient, approved", () => {
+    const engine = new SandboxTransferEngine<TestAccount>({
+      feePolicy: new ZeroFeeTransferPolicy(),
+      now: () => new Date("2026-04-24T00:00:00.000Z"),
+      createTransferId: () => "txn-904",
+    });
+
+    // Branch 1: amount <= 0 -> invalid
+    expect(() =>
+      engine.transfer(createAccounts(), {
+        fromAccountId: "acct-a",
+        toAccountId: "acct-b",
+        amount: 0,
+      }),
+    ).toThrowError("Transfer amount must be greater than zero.");
+
+    // Branch 2: amount > available balance -> insufficient funds
+    expect(() =>
+      engine.transfer(createAccounts(), {
+        fromAccountId: "acct-a",
+        toAccountId: "acct-b",
+        amount: 1000.01,
+      }),
+    ).toThrowError("Insufficient available balance for this sandbox transfer.");
+
+    // Branch 3: valid amount within balance -> approved path
+    const approved = engine.transfer(createAccounts(), {
+      fromAccountId: "acct-a",
+      toAccountId: "acct-b",
+      amount: 100,
+    });
+    expect(approved.amount).toBe(100);
+    expect(approved.fee).toBe(0);
+    expect(approved.ledgerEntries).toHaveLength(2);
+  });
 });

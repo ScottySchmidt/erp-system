@@ -142,25 +142,32 @@ Main branches:
 ```mermaid
 flowchart TD
   A[Start createVoucherPayment] --> B{Any invoice IDs?}
-  B -- No --> E1[Throw No invoices selected]
+  B -- No --> E1[No invoices selected]
   B -- Yes --> C{Required fields present?}
-  C -- No --> E2[Throw Missing required payment data]
+  C -- No --> E2[Missing required payment data]
   C -- Yes --> D{Pay type allowed?}
-  D -- No --> E3[Throw Invalid payment type]
+  D -- No --> E3[Invalid payment type]
   D -- Yes --> F[Begin transaction]
   F --> G[Load unpaid invoices]
   G --> H{Any unpaid invoices loaded?}
-  H -- No --> E4[Throw No valid unpaid invoices]
+  H -- No --> E4[No valid unpaid invoices]
   H -- Yes --> I{Any missing/already-paid IDs?}
-  I -- Yes --> E5[Throw missing/already-paid error]
+  I -- Yes --> E5[Missing/already-paid invoice error]
   I -- No --> J{Account matches all invoices?}
-  J -- No --> E6[Throw account mismatch]
+  J -- No --> E6[Account mismatch]
   J -- Yes --> K[Calculate total + create payment + link invoices]
   K --> L{Payment date <= today?}
   L -- Yes --> M[Mark invoices paid]
   L -- No --> N[Sync invoice paid status]
+  E1 --> T[THROW End of program]
+  E2 --> T
+  E3 --> T
+  E4 --> T
+  E5 --> T
+  E6 --> T
   M --> O[Return success result]
   N --> O
+  O --> S[SUCCESS End of program]
 ```
 
 ### Cyclomatic Complexity
@@ -187,3 +194,22 @@ For `PaymentService.createVoucherPayment()`:
 
 - Why this architecture fits the project: This architecture fits the project because it separates the user interface, business logic, and data management, making the ERP system easier to develop, test, and maintain.
 - Any limitations/future improvements: A limitation is that the system can become more complex as the project grows, so future improvements could include clearer service separation, stronger validation, and better scalability support.
+
+## End of Program: Throw and Success Summary
+
+### Throw Outcomes
+
+- `VendorService.createVendor()`: throws `Vendor name is required.` when vendor name is blank.
+- `PaymentService.createVoucherPayment()`: throws `No invoices selected.` when no invoices are provided.
+- `PaymentService.createVoucherPayment()`: throws missing/already-paid invoice error when selected invoices are invalid.
+- `PaymentService.createVoucherPayment()`: throws `Missing required payment data.` when required fields are not present.
+- `PaymentService.createVoucherPayment()`: throws `Invalid payment type.` for unsupported `payType`.
+- `PaymentService.createVoucherPayment()`: throws `Selected account does not match selected unpaid invoices.` when account mismatch occurs.
+
+### Success Outcomes
+
+- `VendorService.createVendor()`: returns `created=true` and normalized address for valid new vendor.
+- `VendorService.createVendor()`: returns `created=false` and existing vendor for duplicate names.
+- `InvoiceService.calculateTotals()`: returns correct subtotal, tax, and total.
+- `InvoiceApplicationService.createInvoiceForUser()`: persists invoice with computed amount.
+- `PaymentService.createVoucherPayment()`: returns success result, creates payment, links invoices, and updates/syncs invoice paid status.

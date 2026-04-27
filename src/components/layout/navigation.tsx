@@ -47,7 +47,7 @@ const userNav: NavigationItem[] = [
 
 const adminNav: NavigationItem[] = [
   {
-    title: "Test",
+    title: "Testing",
     to: "/test",
     icon: Icon.Activity,
   },

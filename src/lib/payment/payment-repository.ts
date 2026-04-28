@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import { BUSINESS_TIME_ZONE, getTodayDateKey } from "#/lib/voucher";
 import { getDatabaseErrorReason } from "#/lib/server/database/invoices";
@@ -28,6 +28,12 @@ export type CreatedPayment = {
   voucher_number: string;
 };
 
+export type GlAccountOption = {
+  account_id: number;
+  account_name: string;
+  account_type: string;
+};
+
 export interface PaymentTransactionRepository {
   syncInvoicePaidStatus(userId: number): Promise<void>;
   loadUnpaidInvoices(userId: number, invoiceIds: number[]): Promise<PaymentInvoiceRow[]>;
@@ -38,7 +44,7 @@ export interface PaymentTransactionRepository {
 
 export interface PaymentRepository {
   listUnpaidInvoices(userId: number): Promise<Array<PaymentInvoiceRow & { invoice_date: string; vendor_name: string | null }>>;
-  listAccountsForInvoices(invoices: PaymentInvoiceRow[]): Array<{ account_id: number; account_name: string }>;
+  listGlAccounts(): Promise<GlAccountOption[]>;
   withTransaction<T>(runner: (tx: PaymentTransactionRepository) => Promise<T>): Promise<T>;
 }
 
@@ -166,15 +172,15 @@ export class DrizzlePaymentRepository implements PaymentRepository {
     }));
   }
 
-  listAccountsForInvoices(invoices: PaymentInvoiceRow[]): Array<{ account_id: number; account_name: string }> {
-    const accountIds = Array.from(
-      new Set(invoices.map((invoice) => Number(invoice.account_id)).filter(Boolean)),
-    ).sort((a, b) => a - b);
-
-    return accountIds.map((accountId) => ({
-      account_id: accountId,
-      account_name: `Account ${accountId}`,
-    }));
+  async listGlAccounts(): Promise<GlAccountOption[]> {
+    return await this.db
+      .select({
+        account_id: t.gl_accounts.account_id,
+        account_name: t.gl_accounts.account_name,
+        account_type: t.gl_accounts.account_type,
+      })
+      .from(t.gl_accounts)
+      .orderBy(asc(t.gl_accounts.account_id));
   }
 
   async withTransaction<T>(runner: (tx: PaymentTransactionRepository) => Promise<T>): Promise<T> {

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   type CreatedPayment,
   type CreatePaymentInput,
+  type GlAccountOption,
   type PaymentInvoiceRow,
   type PaymentRepository,
   type PaymentTransactionRepository,
@@ -36,14 +37,11 @@ class FakePaymentRepository implements PaymentRepository {
       }));
   }
 
-  listAccountsForInvoices(invoices: PaymentInvoiceRow[]) {
-    const accountIds = Array.from(new Set(invoices.map((invoice) => invoice.account_id))).sort(
-      (a, b) => a - b,
-    );
-    return accountIds.map((accountId) => ({
-      account_id: accountId,
-      account_name: `Account ${accountId}`,
-    }));
+  async listGlAccounts(): Promise<GlAccountOption[]> {
+    return [
+      { account_id: 1000, account_name: "Cash", account_type: "asset" },
+      { account_id: 2001, account_name: "Accounts Payable", account_type: "liability" },
+    ];
   }
 
   async withTransaction<T>(runner: (tx: PaymentTransactionRepository) => Promise<T>): Promise<T> {
@@ -117,6 +115,21 @@ class FakePaymentRepository implements PaymentRepository {
 }
 
 describe("PaymentService", () => {
+  it("loads voucher form options with gl account data", async () => {
+    const repository = new FakePaymentRepository([
+      { invoice_id: 11, amount: 120.5, account_id: 2001, is_paid: false, user_id: 7 },
+    ]);
+    const service = new PaymentService(repository);
+
+    const result = await service.getVoucherFormOptions(7);
+
+    expect(result.invoices).toHaveLength(1);
+    expect(result.accounts).toEqual([
+      { account_id: 1000, account_name: "Cash", account_type: "asset" },
+      { account_id: 2001, account_name: "Accounts Payable", account_type: "liability" },
+    ]);
+  });
+
   it("creates voucher payment and marks selected invoices paid", async () => {
     const repository = new FakePaymentRepository([
       { invoice_id: 11, amount: 120.5, account_id: 2001, is_paid: false, user_id: 7 },

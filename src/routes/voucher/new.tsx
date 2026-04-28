@@ -19,6 +19,7 @@ import {
 type Account = {
   account_id: number;
   account_name: string;
+  account_type: string;
 };
 
 const PAY_TYPES = [
@@ -364,7 +365,7 @@ function NewVoucherPage() {
                 <option value="">Select Account</option>
                 {accounts.map((acc: Account) => (
                   <option key={acc.account_id} value={acc.account_id}>
-                    {acc.account_name} ({acc.account_id})
+                    {acc.account_id} - {acc.account_name} ({acc.account_type})
                   </option>
                 ))}
               </select>

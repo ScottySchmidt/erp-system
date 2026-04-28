@@ -33,9 +33,24 @@ const getVoucherFormOptions = createServerFn()
   .handler(async ({ context }) => {
     const { DrizzlePaymentRepository } = await import("../../lib/payment/payment-repository");
     const { PaymentService } = await import("../../lib/payment/payment-service");
+    const { asc } = await import("drizzle-orm");
+    const { t } = await import("../../lib/server/database");
     const repository = new DrizzlePaymentRepository(context.db);
     const service = new PaymentService(repository);
-    return await service.getVoucherFormOptions(context.auth.profile.user_id);
+    const { invoices } = await service.getVoucherFormOptions(context.auth.profile.user_id);
+    const accounts = await context.db
+      .select({
+        account_id: t.gl_accounts.account_id,
+        account_name: t.gl_accounts.account_name,
+        account_type: t.gl_accounts.account_type,
+      })
+      .from(t.gl_accounts)
+      .orderBy(asc(t.gl_accounts.account_id));
+
+    return {
+      invoices,
+      accounts,
+    };
   });
 
 const saveVoucherPayment = createServerFn({ method: "POST" })

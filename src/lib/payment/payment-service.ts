@@ -1,5 +1,4 @@
 import {
-  type GlAccountOption,
   shouldMarkInvoicesPaidNow,
   type PaymentInvoiceRow,
   type PaymentRepository,
@@ -32,7 +31,7 @@ export type CreateVoucherPaymentResult = {
 
 export type VoucherFormOptions = {
   invoices: Array<PaymentInvoiceRow & { invoice_date: string; vendor_name: string | null }>;
-  accounts: GlAccountOption[];
+  accounts: Array<{ account_id: number; account_name: string }>;
 };
 
 type PaymentServiceOptions = {
@@ -51,10 +50,9 @@ export class PaymentService {
 
   async getVoucherFormOptions(userId: number): Promise<VoucherFormOptions> {
     const invoices = await this.repository.listUnpaidInvoices(userId);
-    const accounts = await this.repository.listGlAccounts();
     return {
       invoices,
-      accounts,
+      accounts: this.repository.listAccountsForInvoices(invoices),
     };
   }
 

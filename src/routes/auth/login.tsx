@@ -86,7 +86,9 @@ function LoginPage() {
                 onChange={(e) => field.handleChange(e.target.value)}
                 className={styles.input}
               />
+              {!mutation.error && (
               <FieldError meta={field.state.meta} className={styles.error} />
+              )}
             </Field>
           )}
         />
@@ -104,7 +106,9 @@ function LoginPage() {
                 onChange={(e) => field.handleChange(e.target.value)}
                 className={styles.input}
               />
+              {!mutation.error && (
               <FieldError meta={field.state.meta} className={styles.error} />
+              )}
             </Field>
           )}
         />

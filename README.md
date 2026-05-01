@@ -10,7 +10,7 @@ Example: Box Layout or Gidlayout
 3. Controller connects the model and view. 
 Examples: mousePressed()
 
-![ERP Diagram](UML-ERP.png)
+![pic](public/UML-ERP.png)
 
 ## Architecture Diagram
 Here is our diagram MVC image below:
